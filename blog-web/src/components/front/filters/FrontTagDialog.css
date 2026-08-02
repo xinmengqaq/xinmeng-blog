@@ -1,0 +1,235 @@
+.tag-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.tag-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(45 35 48 / 34%);
+  backdrop-filter: blur(2px);
+}
+
+.tag-dialog__panel {
+  position: relative;
+  display: grid;
+  grid-template-rows: 60px minmax(0, 1fr) 68px;
+  width: min(480px, 100%);
+  min-height: min(380px, calc(100dvh - 64px));
+  max-height: min(520px, calc(100dvh - 64px));
+  overflow: hidden;
+  border: 1px solid rgb(238 142 167 / 58%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff7fa 0%, #fffdfd 100%);
+  box-shadow: 0 22px 60px rgb(88 52 67 / 22%);
+}
+
+.tag-dialog__panel header,
+.tag-dialog__panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tag-dialog__panel header {
+  padding: 0 22px;
+  border-bottom: 1px solid rgb(238 142 167 / 30%);
+}
+
+.tag-dialog__panel h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 700 19px/1.3 var(--front-font-family);
+}
+
+.tag-dialog .icon-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b94e70;
+  cursor: pointer;
+  place-items: center;
+}
+
+.tag-dialog__body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px 22px;
+  overscroll-behavior: contain;
+}
+
+.tag-dialog__search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 42px;
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border: 1px solid rgb(238 142 167 / 42%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 84%);
+}
+
+.tag-dialog__search input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  padding: 0 10px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--front-ink);
+}
+
+.tag-dialog__section + .tag-dialog__section {
+  margin-top: 18px;
+}
+
+.tag-dialog__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  margin-bottom: 8px;
+  color: #705967;
+  font-size: 12px;
+}
+
+.tag-dialog__section-heading strong {
+  color: #b94e70;
+  font-size: 12px;
+}
+
+.tag-dialog__section-heading small {
+  color: var(--front-muted);
+  font-size: 11px;
+}
+
+.tag-dialog__selected {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  color: var(--front-muted);
+  font-size: 12px;
+}
+
+.tag-dialog__selected button,
+.tag-dialog__list button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid rgb(220 167 183 / 58%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  color: #5f5260;
+  cursor: pointer;
+}
+
+.tag-dialog__selected button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-color: #d76d8d;
+  background: #fff0f5;
+  color: #ad4969;
+}
+
+.tag-dialog__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 38px;
+}
+
+.tag-dialog__empty {
+  margin: 6px 0;
+  color: var(--front-muted);
+  font-size: 13px;
+}
+
+.tag-dialog__panel footer {
+  gap: 12px;
+  padding: 12px 22px;
+  border-top: 1px solid rgb(238 142 167 / 30%);
+  background: rgb(255 250 252 / 94%);
+}
+
+.tag-dialog__clear,
+.tag-dialog__done {
+  min-height: 42px;
+  border-radius: 6px;
+  font: 500 14px/1 var(--front-font-family);
+  cursor: pointer;
+}
+
+.tag-dialog__clear {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9d5d73;
+}
+
+.tag-dialog__clear:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.tag-dialog__done {
+  min-width: 88px;
+  margin-left: auto;
+  border: 1px solid #c85f80;
+  background: #cf6686;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .tag-dialog {
+    align-items: end;
+    padding: 0;
+  }
+
+  .tag-dialog__panel {
+    grid-template-rows: 56px minmax(0, 1fr) auto;
+    width: 100%;
+    min-height: 0;
+    max-height: 76dvh;
+    border-width: 1px 0 0;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .tag-dialog__panel header {
+    position: relative;
+    padding-top: 4px;
+  }
+
+  .tag-dialog__panel header::before {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 36px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgb(185 78 112 / 28%);
+    content: '';
+    transform: translateX(-50%);
+  }
+
+  .tag-dialog__body {
+    padding: 14px 16px 18px;
+  }
+
+  .tag-dialog__panel footer {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+}

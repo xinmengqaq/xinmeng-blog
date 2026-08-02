@@ -1,0 +1,114 @@
+# GitHub 汇总仓库专用忽略规则
+#
+# 本文件只服务于“项目学习”根仓库。三个子项目自己的 .gitignore 由各自
+# 仓库维护，根仓库不提交它们，避免两套忽略规则互相影响。
+
+# 根仓库只公开项目说明与三个项目源码
+/*
+!/.gitignore
+!/README.md
+!/springboot/
+!/blog-web/
+!/blog-fastapi/
+!/pgsql/
+!/assets/
+
+
+# 子项目仓库元数据与各自的忽略配置
+/*/.git/
+/*/.gitignore
+
+# 文档、设计稿、学习记录与交接材料
+**/docs/
+**/*.md
+!/README.md
+
+# 本地环境变量与私密配置；示例配置允许提交
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+**/application-local.yml
+**/application-local.yaml
+**/application-local.properties
+**/application-*.local.yml
+**/application-*.local.yaml
+**/application-*.local.properties
+**/application-prod.yml
+**/application-prod.yaml
+**/application-prod.properties
+**/application-production.yml
+**/application-production.yaml
+**/application-production.properties
+
+# 私钥、证书及常见凭据文件
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/id_rsa
+**/id_ed25519
+**/credentials.json
+**/service-account*.json
+
+# 依赖、构建产物与测试报告
+**/node_modules/
+**/target/
+**/dist/
+**/build/
+**/coverage/
+**/.vite/
+**/.vitest/
+**/.pytest_cache/
+**/.pytest-tmp/
+**/.pytest-*/
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/venv/
+
+# 运行数据、日志、缓存与临时目录
+**/logs/
+**/uploads/
+**/tmp/
+**/temp/
+**/.tmp/
+**/.temp/
+**/.cache/
+**/output/
+/springboot/sql/
+/springboot/files/
+/blog-fastapi/storage/
+**/*.log
+**/*.tmp
+**/*.temp
+**/*.pid
+**/*.dump
+**/*.dumpstream
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.mv.db
+**/*.trace.db
+**/*.hprof
+**/hs_err_pid*
+**/replay_pid*
+
+# IDE、操作系统与本地自动化工具
+**/.idea/
+**/.vscode/
+**/.settings/
+**/.classpath
+**/.project
+**/.factorypath
+**/*.iml
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+**/.agents/
+**/.codex/
+**/.playwright-cli/
+**/garden-gpt-image-2/
+**/canvas/

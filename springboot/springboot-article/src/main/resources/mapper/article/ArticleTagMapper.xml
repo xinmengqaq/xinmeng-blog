@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xinmengqaq.springboot.article.mapper.ArticleTagMapper">
+
+    <!-- 批量新增文章标签关联 -->
+    <insert id="batchInsert">
+        insert into article_tag (article_id, tag_id)
+        values
+        <foreach collection="articleTags" item="item" separator=",">
+            (#{item.articleId}, #{item.tagId})
+        </foreach>
+    </insert>
+
+    <!-- 根据文章 ID 删除旧标签关联 -->
+    <delete id="deleteByArticleId">
+        delete from article_tag
+        where article_id = #{articleId}
+    </delete>
+
+    <!-- 根据文章 ID 列表批量删除标签关联 -->
+    <delete id="deleteByArticleIds">
+        delete from article_tag
+        where article_id in
+        <foreach collection="articleIds" item="articleId" open="(" separator="," close=")">
+            #{articleId}
+        </foreach>
+    </delete>
+
+    <!-- 根据文章 ID 查询文章绑定的标签列表 -->
+    <select id="selectTagsByArticleId" resultType="com.xinmengqaq.springboot.article.vo.TagVO">
+        select
+        t.id,
+        t.name,
+        <!-- [PgSQL] 相关子查询
+             子查询引用了外层查询的字段（t.id），所以叫相关子查询，外层每行都执行一次子查询。
+             这里逐个标签统计它被多少篇文章使用；和 JOIN+group by 效果类似但写法更独立。
+             相关子查询性能依赖子查询是否走索引，数据量大时注意优化。 -->
+        (select count(*) from article_tag at_count where at_count.tag_id = t.id) as article_count,
+        t.created_at,
+        t.updated_at
+        from article_tag at
+        <!-- [PgSQL] INNER JOIN ... ON
+             内连接只返回两表 ON 条件匹配的行，左表或右表无匹配的行都丢弃。
+             和 LEFT JOIN 区别：LEFT JOIN 保留左表所有行，右表无匹配返回 NULL；INNER JOIN 两边都要有才返回。
+             这里 article_tag 和 tag 内连接，只取标签真实存在的关联记录。 -->
+        inner join tag t on t.id = at.tag_id
+        where at.article_id = #{articleId}
+        order by t.id desc
+    </select>
+
+
+</mapper>

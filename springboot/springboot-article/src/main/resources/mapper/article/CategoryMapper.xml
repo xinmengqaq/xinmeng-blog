@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.xinmengqaq.springboot.article.mapper.CategoryMapper">
+
+    <!-- 查询所有分类 -->
+    <select id="selectListVO" resultType="com.xinmengqaq.springboot.article.vo.CategoryVO">
+        select
+        <include refid="categoryVOColumns"/>
+        left join article a on a.category_id = c.id
+        <where>
+            <if test="status != null and status != ''">
+                and c.status = #{status}
+            </if>
+        </where>
+        <!-- [PgSQL] GROUP BY 分组
+             按指定列分组，配合 count/sum 等聚合函数统计每组数据。SELECT 里的非聚合列必须都出现在 GROUP BY 中，否则报错。
+             这里按分类字段分组，配合 count(a.id) 统计每个分类下文章数量；LEFT JOIN 保证没有文章的分类也能显示（count 为 0）。 -->
+        group by <include refid="categoryVOGroupColumns"/>
+        order by c.sort_order asc, c.id desc
+    </select>
+
+
+    <!-- 分类 VO 查询字段，顺序按 CategoryVO 返回字段写 -->
+    <sql id="categoryVOColumns">
+        c.id,
+        c.name,
+        c.description,
+        c.sort_order,
+        c.status,
+        <!-- [PgSQL] count(列) / count(*) / count(distinct)
+             count(列) 统计该列非 NULL 的行数；count(*) 统计所有行数（含 NULL）；count(distinct 列) 统计去重后的非 NULL 值数。
+             LEFT JOIN 后没有文章的分类行 a.id 为 NULL，count(a.id) 会算成 0，符合"没文章就显示 0"的预期；用 count(*) 会算成 1（有一行全 NULL 的连接行），不对。 -->
+        count(a.id) as article_count,
+        c.created_at,
+        c.updated_at
+        from category c
+    </sql>
+
+    <!-- 分类 VO 分组字段，不包含 count(a.id) -->
+    <sql id="categoryVOGroupColumns">
+        c.id,
+        c.name,
+        c.description,
+        c.sort_order,
+        c.status,
+        c.created_at,
+        c.updated_at
+    </sql>
+
+    <!-- 分类查询语句，按category 返回 -->
+    <sql id="selectCategory">
+        select
+        id,
+        name,
+        description,
+        sort_order,
+        status,
+        created_at,
+        updated_at
+        from category
+    </sql>
+
+    <!-- [PgSQL] 普通 SELECT
+         基础查询结构：select 列 from 表 where 条件。select 指定返回列，from 指定数据源表，where 筛选行。
+         where 用 = 精确匹配，#{} 占位防注入；不带 where 则返回全表。本模块的普通增删改查只在这一个文件记一次。 -->
+    <!--按名称查询分类-->
+    <select id="selectByName" resultType="com.xinmengqaq.springboot.article.entity.Category">
+        <include refid="selectCategory" />
+        where name = #{name}
+    </select>
+
+    <!--按ID查询分类-->
+    <select id="selectById" resultType="com.xinmengqaq.springboot.article.entity.Category">
+        <include refid="selectCategory" />
+        where id = #{id}
+    </select>
+
+    <!-- 删除前锁定分类记录，避免占用校验期间产生新的关联写入 -->
+    <select id="selectByIdForUpdate" resultType="com.xinmengqaq.springboot.article.entity.Category">
+        <include refid="selectCategory" />
+        where id = #{id}
+        for update
+    </select>
+
+    <!--按ID和名称查询分类-->
+    <select id="selectExistsByIdAndName" resultType="com.xinmengqaq.springboot.article.entity.Category">
+        <include refid="selectCategory" />
+        where name = #{name}
+        and id != #{id}
+    </select>
+
+    <!--按ID查询分类VO-->
+    <select id="selectByIdVO" resultType="com.xinmengqaq.springboot.article.vo.CategoryVO">
+        select
+        <include refid="categoryVOColumns"/>
+        left join article a on a.category_id = c.id
+        where c.id = #{id}
+        group by <include refid="categoryVOGroupColumns"/>
+    </select>
+
+    <!-- 根据分类ID查询分类下的文章数量 -->
+    <select id="countArticleByCategoryId" resultType="java.lang.Long">
+        select count(1)
+        from article
+        where category_id = #{id}
+    </select>
+
+    <!-- [PgSQL] 普通 DELETE
+         删除结构：delete from 表 where 条件。where 必须带，否则删整表数据，是不可恢复的破坏性操作。
+         这里按 id 删除单条，Service 层会先做占用校验避免删被引用的分类。 -->
+    <!-- 根据分类ID删除分类 -->
+    <delete id="deleteById">
+        delete from category
+        where id = #{id}
+    </delete>
+
+    <!-- [PgSQL] 普通 INSERT
+         新增结构：insert into 表(列1,列2) values(值1,值2)。列和值按位置对应，数量必须一致。
+         这里用 <trim> 动态生成列和值，实现按非空字段插入，避免 null 覆盖默认值。 -->
+    <!-- 新增分类 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
+        insert into category
+        <!-- [MyBatis] <trim> 通用修剪
+             <trim> 比 <set>/<where> 更灵活：prefix 给片段加前缀，suffix 加后缀，suffixOverrides 去掉末尾指定字符。
+             这里第一个 <trim> 生成 (name, description, ...) 并去掉末尾逗号，第二个生成 (#{name}, #{description}, ...) 同样去逗号。
+             prefix="(" suffix=")" 自动加括号，suffixOverrides="," 去掉最后一个字段后的逗号，避免 SQL 语法错。 -->
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            name,
+            <if test="description != null">
+                description,
+            </if>
+            <if test="sortOrder != null">
+                sort_order,
+            </if>
+            <if test="status != null and status != ''">
+                status,
+            </if>
+            created_at,
+            updated_at,
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{name},
+            <if test="description != null">
+                #{description},
+            </if>
+            <if test="sortOrder != null">
+                #{sortOrder},
+            </if>
+            <if test="status != null and status != ''">
+                #{status},
+            </if>
+            #{createdAt},
+            #{updatedAt},
+        </trim>
+    </insert>
+
+    <!-- [PgSQL] 普通 UPDATE
+         修改结构：update 表 set 列=值 where 条件。set 指定要改的列和新值，where 必须带，否则改整表。
+         这里整体更新分类字段，where id 限定单条；和 AdminMapper 的 <set> 动态更新不同，这里是固定列全量更新。 -->
+    <!-- 修改分类 -->
+    <update id="updateById">
+        update category
+        set
+        name = #{name},
+        description = #{description},
+        sort_order = #{sortOrder},
+        status = #{status},
+        updated_at = #{updatedAt}
+        where id = #{id}
+    </update>
+
+</mapper>

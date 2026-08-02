@@ -1,0 +1,78 @@
+.image-editor-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-height: 34px;
+  min-width: 0;
+}
+
+.image-editor-toolbar__context,
+.image-editor-toolbar__actions,
+.image-editor-toolbar__submit {
+  align-items: center;
+  display: flex;
+}
+
+.image-editor-toolbar__context {
+  gap: 4px;
+  min-width: 0;
+}
+
+.image-editor-toolbar__status {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 560;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.image-editor-toolbar__status::before {
+  background: var(--color-text-subtle);
+  border-radius: 50%;
+  content: '';
+  flex: 0 0 auto;
+  height: 6px;
+  width: 6px;
+}
+
+.image-editor-toolbar__status[data-state='current']::before {
+  background: var(--color-success);
+}
+
+.image-editor-toolbar__status[data-state='upload'],
+.image-editor-toolbar__status[data-state='remove'] {
+  color: var(--color-accent);
+}
+
+.image-editor-toolbar__status[data-state='upload']::before,
+.image-editor-toolbar__status[data-state='remove']::before {
+  background: var(--color-accent);
+}
+
+.image-editor-toolbar__actions {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.image-editor-toolbar__icon-action {
+  gap: 0;
+  height: 30px;
+  min-height: 30px;
+  min-width: 30px;
+  padding: 0;
+  width: 30px;
+}
+
+.image-editor-toolbar__icon-action .ui-button__label:empty {
+  display: none;
+}
+
+.image-editor-toolbar__submit {
+  border-left: 1px solid var(--color-border);
+  margin-left: 4px;
+  padding-left: 8px;
+}

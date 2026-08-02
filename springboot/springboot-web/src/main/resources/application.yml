@@ -1,0 +1,57 @@
+server:
+  port: 9090
+spring:
+  config:
+    # 笔记：[Boot] spring.config.import
+    # Spring Boot 2.4+ 的配置导入机制，把另一个配置文件引入当前文件合并加载。
+    # optional: 前缀表示该文件不存在时不报错、直接跳过，适合 application-local.yml 这种本地可选覆盖文件。
+    # 不带 optional 则文件必须存在，否则启动失败。
+    import: optional:classpath:application-local.yml
+  datasource:
+    # PostgreSQL 数据源配置
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/springboot_vue?currentSchema=public&sslmode=disable}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  aop:
+    # 笔记：[Boot] spring.aop.proxy-target-class
+    # 控制代理类型：true（默认）用 CGLIB 生成子类代理，能代理非接口的 public 方法；
+    #   false 用 JDK 动态代理，只代理目标对象实现的接口方法，非接口方法不被代理。
+    # Spring Boot 4 默认 true；切到 false 后 selectById（不在接口）的切点会失效。
+    proxy-target-class: true
+springdoc:
+  api-docs:
+    enabled: ${DOCS_ENABLED:true}
+  swagger-ui:
+    enabled: ${DOCS_ENABLED:true}
+  writer-with-order-by-keys: false
+
+mybatis-plus:
+  # 笔记：[MyBatis] mapper-locations: classpath*
+  # classpath* 和 classpath 的区别：classpath 只扫第一个匹配资源，classpath* 扫描所有 jar/目录下的匹配资源。
+  # 多模块项目里 mapper XML 分散在各模块 jar 中，必须用 classpath* 才能全部加载，用 classpath 会漏掉其他模块的 XML。
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.xinmengqaq.springboot.*.entity
+  configuration:
+    # 笔记：[MyBatis] map-underscore-to-camel-case
+    # 开启后 MyBatis 自动把数据库下划线列名映射到 Java 驼峰属性：password_version -> passwordVersion。
+    # 不开启则列名必须和属性名完全一致才能映射，否则查询结果对应字段为 null，是常见踩坑点。
+    map-underscore-to-camel-case: true
+    # 笔记：[MyBatis·日志] log-impl=StdOutImpl
+    # 指定 MyBatis SQL 日志的实现类，StdOutImpl 直接用 System.out.println 输出 SQL 到控制台。
+    # 它不走 Logback，和 @Slf4j 业务日志是两套通道：SQL 日志走标准输出，业务日志走 Logback，互不干扰。
+    # 调试时看 SQL 用这个，上线后可关掉或换成 Slf4j 实现由 Logback 统一接管。
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 二级缓存：开启后 MyBatis 会缓存查询结果，避免重复查询数据库，提高性能。
+    cache-enabled: false
+  # 全局配置：MyBatis Plus 提供的全局配置项，影响所有 Mapper 接口的默认行为。
+  global-config:
+    # 数据库配置：MyBatis Plus 提供的数据库配置项，影响所有 Mapper 接口的默认行为。
+    db-config:
+      # 开启后 MyBatis Plus 会自动为实体类的主键字段生成 ID，无需手动设置。
+      id-type: auto
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expire-seconds: 28800
+  clock-skew-seconds: 120

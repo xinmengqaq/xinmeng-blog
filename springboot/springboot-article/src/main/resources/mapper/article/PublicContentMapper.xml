@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xinmengqaq.springboot.article.mapper.PublicContentMapper">
+
+    <!-- 公开文章列表公共查询字段 -->
+    <sql id="publicArticleListColumns">
+        a.id,
+        a.title,
+        a.summary,
+        a.cover_url,
+        a.category_id,
+        c.name as category_name,
+        a.is_top,
+        a.is_recommend,
+        a.view_count,
+        a.comment_count,
+        a.like_count,
+        a.published_at
+    </sql>
+
+    <!-- [PgSQL] ORDER BY 多字段复合排序
+         多字段排序按声明顺序定优先级：先按 is_top 降序（置顶在前），同级别再按 published_at 降序（新发布在前），最后按 id 降序兜底。
+         末尾用 id 做稳定排序兜底很关键：如果前面字段值都相同，不加 id 的话数据库返回顺序可能不稳定，翻页时出现重复或遗漏。
+         asc 升序（默认）、desc 降序，每个字段独立指定方向。 -->
+    <!-- 公开文章列表公共排序规则：置顶优先，其次发布时间倒序，最后ID倒序 -->
+    <sql id="publicArticleOrder">
+        a.is_top desc,
+        a.published_at desc,
+        a.id desc
+    </sql>
+
+    <!-- 查询推荐文章列表，限制返回数量 -->
+    <select id="selectFeaturedArticles" resultType="com.xinmengqaq.springboot.article.vo.PublicArticleListVO">
+        select
+        <include refid="publicArticleListColumns"/>
+        from article a
+        left join category c on c.id = a.category_id and c.status = 'visible'
+        where a.status = 'published'
+        and a.is_recommend = true
+        order by <include refid="publicArticleOrder"/>
+        <!-- [PgSQL] LIMIT 限制返回行数
+             LIMIT n 只返回前 n 行，常用于"取最新 N 条""推荐 N 条"这类限量查询。
+             分页时配合 OFFSET 跳过前几页：LIMIT size OFFSET (page-1)*size，本项目分页由 PageHelper 自动拼。
+             LIMIT 必须配合 ORDER BY 否则返回的行不确定，每次查询可能不同。 -->
+        limit #{limit}
+    </select>
+
+    <!-- 查询最新文章列表，限制返回数量 -->
+    <select id="selectLatestArticles" resultType="com.xinmengqaq.springboot.article.vo.PublicArticleListVO">
+        select
+        <include refid="publicArticleListColumns"/>
+        from article a
+        left join category c on c.id = a.category_id and c.status = 'visible'
+        where a.status = 'published'
+        order by <include refid="publicArticleOrder"/>
+        limit #{limit}
+    </select>
+
+    <!-- 分页查询公开文章，支持关键词、分类、标签、年月动态筛选 -->
+    <select id="selectArticlePage" resultType="com.xinmengqaq.springboot.article.vo.PublicArticleListVO">
+        select
+        <include refid="publicArticleListColumns"/>
+        from article a
+        left join category c on c.id = a.category_id and c.status = 'visible'
+        <where>
+            a.status = 'published'
+            <if test="keyword != null and keyword != ''">
+                and (
+                    a.title like concat('%', #{keyword}, '%')
+                    or a.summary like concat('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="categoryId != null">
+                and a.category_id = #{categoryId}
+            </if>
+            <if test="tagIds != null and !tagIds.isEmpty()">
+                and exists (
+                    select 1
+                    from article_tag at_filter
+                    where at_filter.article_id = a.id
+                    and at_filter.tag_id in
+                    <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+                        #{tagId}
+                    </foreach>
+                )
+            </if>
+            <if test="year != null">
+                and extract(year from a.published_at) = #{year}
+            </if>
+            <if test="month != null">
+                and extract(month from a.published_at) = #{month}
+            </if>
+        </where>
+        order by <include refid="publicArticleOrder"/>
+    </select>
+
+    <!-- 根据文章ID查询公开文章详情，仅返回已发布文章 -->
+    <select id="selectArticleDetail" resultType="com.xinmengqaq.springboot.article.vo.PublicArticleDetailVO">
+        select
+        <include refid="publicArticleListColumns"/>,
+        a.content
+        from article a
+        left join category c on c.id = a.category_id and c.status = 'visible'
+        where a.id = #{id}
+        and a.status = 'published'
+    </select>
+
+    <!-- 公开文章详情访问成功时原子增加浏览量 -->
+    <update id="incrementViewCount">
+        update article
+        set view_count = view_count + 1
+        where id = #{id}
+        and status = 'published'
+    </update>
+
+    <!-- 根据文章ID查询关联标签列表 -->
+    <select id="selectArticleTags" resultType="com.xinmengqaq.springboot.article.vo.PublicTagVO">
+        select
+        t.id,
+        t.name
+        from tag t
+        inner join article_tag at on at.tag_id = t.id
+        inner join article a on a.id = at.article_id and a.status = 'published'
+        where at.article_id = #{articleId}
+        order by t.id asc
+    </select>
+
+    <!-- 查询公开分类列表，统计每个分类下的已发布文章数量 -->
+    <select id="selectCategories" resultType="com.xinmengqaq.springboot.article.vo.PublicCategoryVO">
+        select
+        c.id,
+        c.name,
+        count(a.id) as article_count
+        from category c
+        left join article a on a.category_id = c.id and a.status = 'published'
+        where c.status = 'visible'
+        group by c.id, c.name, c.sort_order
+        order by c.sort_order asc, c.id desc
+    </select>
+
+    <!-- 查询公开标签列表，统计每个标签关联的已发布文章数量 -->
+    <select id="selectTags" resultType="com.xinmengqaq.springboot.article.vo.PublicTagVO">
+        select
+        t.id,
+        t.name,
+        count(distinct a.id) as article_count
+        from tag t
+        inner join article_tag at on at.tag_id = t.id
+        inner join article a on a.id = at.article_id and a.status = 'published'
+        group by t.id, t.name
+        order by t.id desc
+    </select>
+
+    <!-- 查询文章归档数据，按发布时间的年月分组统计文章数量 -->
+    <select id="selectArchives" resultType="com.xinmengqaq.springboot.article.vo.ArticleArchiveRowVO">
+        <!-- [PgSQL] extract() + cast() 日期函数与类型转换
+             extract(field from timestamp) 从时间戳提取指定部分（year/month/day/hour 等），返回 numeric 类型。
+             numeric 是精确小数，VO 字段是 Integer，直接映射类型不匹配，所以用 cast(... as integer) 显式转成整型。
+             PG 的 :: 也可做类型转换（如 extract(...)::integer），cast 是 SQL 标准写法，跨库兼容性更好。 -->
+        select
+        cast(extract(year from a.published_at) as integer) as year,
+        cast(extract(month from a.published_at) as integer) as month,
+        count(a.id) as article_count
+        from article a
+        where a.status = 'published'
+        and a.published_at is not null
+        group by
+        extract(year from a.published_at),
+        extract(month from a.published_at)
+        order by year desc, month desc
+    </select>
+
+    <select id="countArticleLike" resultType="java.lang.Integer">
+        select count(1)
+        from article_like
+        where article_id = #{articleId}
+        and visitor_key_hash = #{visitorKeyHash}
+    </select>
+
+    <!-- [MyBatis] XML 转义 &gt;= / &lt;
+         MyBatis XML 里写 SQL 时，>= 必须写成 &gt;=，< 必须写成 &lt;，否则 XML 解析器把 < 当作标签起始而报错。
+         > 单独使用一般不冲突，但 >= 里的 = 不影响，习惯上整体转义更安全；<= 写成 &lt;=。
+         这里 created_at &gt;= #{since} 表示创建时间大于等于起始时间，#{} 正常占位不受影响。 -->
+    <select id="countRecentLikesByIpHash" resultType="java.lang.Long">
+        select count(1)
+        from article_like
+        where ip_hash = #{ipHash}
+        and created_at &gt;= #{since}
+    </select>
+
+    <select id="selectOldestRecentLikeAtByIpHash" resultType="java.time.OffsetDateTime">
+        select min(created_at)
+        from article_like
+        where ip_hash = #{ipHash}
+        and created_at &gt;= #{since}
+    </select>
+
+    <insert id="insertArticleLike">
+        insert into article_like
+        (article_id, visitor_key_hash, ip_hash, created_at)
+        values
+        (#{articleId}, #{visitorKeyHash}, #{ipHash}, #{createdAt})
+    </insert>
+
+    <update id="incrementLikeCount">
+        update article
+        set like_count = like_count + 1
+        where id = #{id}
+        and status = 'published'
+    </update>
+
+    <select id="selectLikeCount" resultType="java.lang.Integer">
+        select like_count
+        from article
+        where id = #{id}
+        and status = 'published'
+    </select>
+
+</mapper>

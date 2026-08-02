@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xinmengqaq.springboot.admin.mapper.AdminMapper">
+
+    <!-- 根据用户名查询管理员，登录时使用 -->
+    <select id="selectByUsername" resultType="com.xinmengqaq.springboot.admin.entity.Admin">
+        select id, username, password, name, role, avatar, password_version
+        from admin
+        where username = #{username}
+        limit 1
+    </select>
+
+    <!-- 根据管理员 ID 查询管理员，JWT 校验和管理员资料维护时使用 -->
+    <select id="selectById" resultType="com.xinmengqaq.springboot.admin.entity.Admin">
+        select id, username, password, name, role, avatar, password_version
+        from admin
+        where id = #{id}
+        limit 1
+    </select>
+
+    <!-- [MyBatis·PgSQL] SELECT ... FOR UPDATE
+         FOR UPDATE 是 SELECT 的锁选项，写在末尾，对查到的行加排他锁。
+         pg 行为：阻塞别的事务对这些行 UPDATE/DELETE/同句 FOR UPDATE，但不阻塞普通 SELECT（MVCC 多版本读不加锁）。
+         像超市最后一件特价商品被你拿在手里，别人想买只能排队，路过看标签不受影响。
+         只在事务内有效，COMMIT/ROLLBACK 后锁释放。 -->
+    <!-- 修改密码时锁定管理员记录，避免并发请求同时通过旧密码校验 -->
+    <select id="selectByIdForUpdate" resultType="com.xinmengqaq.springboot.admin.entity.Admin">
+        select id, username, password, name, role, avatar, password_version
+        from admin
+        where id = #{id}
+        limit 1
+        for update
+    </select>
+
+    <!-- [MyBatis] <set> + <if> 动态 SET
+         <set> 包裹 SET 子句，自动去掉末尾多余逗号，避免 `name=?,` 后面空着导致 SQL 语法错。
+         <if test="..."> 用 OGNL 表达式判断字段是否满足条件，满足才拼接对应 SQL 片段，实现按需更新非空字段。
+         test 里用 != null and != '' 判断字符串，避免把空串更新进库；数值类型只判 != null。 -->
+    <!-- 修改管理员资料 -->
+    <update id="updateProfile">
+        update admin
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+            <if test="username != null and username != ''">
+                username = #{username},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- [PgSQL] password_version = password_version + 1 原子自增
+         UPDATE 时直接用 col = col + 1 让数据库在一条语句内完成读改写，是原子操作，不会出现并发下互相覆盖。
+         如果改成先 SELECT 读出来再 UPDATE 写回，两个并发请求可能都读到旧值再各自 +1，结果只加了 1 而不是 2。
+         这里用原子自增让修改密码后 password_version 递增，使旧 Token 因版本不匹配而失效。 -->
+    <!-- 修改管理员密码 -->
+    <update id="changePassword">
+        update admin
+        set password = #{newPassword},
+        password_version = password_version + 1
+        where id = #{id}
+    </update>
+</mapper>
+

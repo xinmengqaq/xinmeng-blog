@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xinmengqaq.springboot.article.mapper.TagMapper">
+
+
+    <!-- 标签 VO 查询字段，顺序按 TagVO 返回字段写 -->
+    <sql id="tagVOColumns">
+        t.id,
+        t.name,
+        count(at.article_id) as article_count,
+        t.created_at,
+        t.updated_at
+        from tag t
+    </sql>
+
+    <!-- 标签 VO 分组字段，不包含 count(...) -->
+    <sql id="tagVOGroupColumns">
+        t.id,
+        t.name,
+        t.created_at,
+        t.updated_at
+    </sql>
+
+    <!-- 标签实体查询语句，按 Tag 返回 -->
+    <sql id="selectTag">
+        select
+        id,
+        name,
+        created_at,
+        updated_at
+        from tag
+    </sql>
+
+    <!-- 新增标签 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into tag
+        ( name, created_at, updated_at )
+        values
+        ( #{name}, #{createdAt}, #{updatedAt} )
+    </insert>
+    <!-- 修改标签 -->
+    <update id="updateById">
+        update tag
+        set
+        name = #{name},
+        updated_at = #{updatedAt}
+        where id = #{id}
+    </update>
+
+    <!-- 删除标签 -->
+    <delete id="deleteById">
+        delete from tag
+        where id = #{id}
+    </delete>
+
+
+    <!-- 标签 VO 查询语句 -->
+    <select id="selectList" resultType="com.xinmengqaq.springboot.article.vo.TagVO">
+        select
+        <include refid="tagVOColumns"/>
+        left join article_tag at on at.tag_id = t.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                and t.name like concat('%', #{keyword}, '%')
+            </if>
+        </where>
+        group by <include refid="tagVOGroupColumns"/>
+        order by t.id desc
+    </select>
+
+    <!-- 根据标签名查询标签 -->
+    <select id="selectByName" resultType="com.xinmengqaq.springboot.article.entity.Tag">
+        <include refid="selectTag"/>
+        where name = #{name}
+    </select>
+
+    <!-- 根据标签ID查询标签 -->
+    <select id="selectById" resultType="com.xinmengqaq.springboot.article.entity.Tag">
+        <include refid="selectTag"/>
+        where id = #{id}
+    </select>
+
+    <!-- 删除前锁定标签记录，避免占用校验期间产生新的关联写入 -->
+    <select id="selectByIdForUpdate" resultType="com.xinmengqaq.springboot.article.entity.Tag">
+        <include refid="selectTag"/>
+        where id = #{id}
+        for update
+    </select>
+
+    <!-- 修改时按名称查询其他标签，排除当前 ID -->
+    <select id="selectExistsByIdAndName" resultType="com.xinmengqaq.springboot.article.entity.Tag">
+        <include refid="selectTag"/>
+        where name = #{name}
+        and id != #{id}
+    </select>
+
+    <!-- 按 ID 查询标签 VO -->
+    <select id="selectByIdVO" resultType="com.xinmengqaq.springboot.article.vo.TagVO">
+        select
+        <include refid="tagVOColumns"/>
+        left join article_tag at on at.tag_id = t.id
+        where t.id = #{id}
+        group by <include refid="tagVOGroupColumns"/>
+    </select>
+
+    <!-- 查询标签被多少篇文章使用 -->
+    <select id="countArticleByTagId" resultType="java.lang.Long">
+        select count(1)
+        from article_tag
+        where tag_id = #{id}
+    </select>
+
+    <!-- 根据标签 ID 列表统计真实存在的标签数量 -->
+    <select id="countByIds" resultType="java.lang.Long">
+        select count(1)
+        from tag
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

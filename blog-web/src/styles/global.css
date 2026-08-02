@@ -1,0 +1,47 @@
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    'Noto Sans SC Variable',
+    'Noto Sans SC',
+    'Microsoft YaHei UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-main {
+  padding: 32px;
+}
+
+.page {
+  display: grid;
+  gap: 12px;
+}
+
+.page h1 {
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.page p {
+  color: var(--color-text-muted);
+}

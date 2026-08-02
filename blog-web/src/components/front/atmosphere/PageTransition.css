@@ -1,0 +1,115 @@
+.front-page-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  background: rgb(255 248 251 / 92%);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  place-items: center;
+}
+
+.front-page-transition__loader {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+
+.front-page-transition__track {
+  position: relative;
+  display: grid;
+  width: 152px;
+  height: 152px;
+  border: 3px solid #f5bdcc;
+  border-radius: 50%;
+  background: rgb(255 253 253 / 82%);
+  box-shadow: inset 0 0 0 8px rgb(255 237 243 / 58%);
+  place-items: center;
+}
+
+.front-page-transition__track > img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.front-page-transition__progress {
+  position: absolute;
+  inset: -3px;
+  border: 3px solid transparent;
+  border-top-color: #d86488;
+  border-right-color: #d86488;
+  border-radius: 50%;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.front-page-transition__petal {
+  position: absolute;
+  top: 4px;
+  right: 15px;
+  width: 12px;
+  height: 8px;
+  border-radius: 80% 20% 80% 20%;
+  background: #d86488;
+  transform: rotate(24deg);
+}
+
+.front-page-transition__station {
+  position: absolute;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #fffafc;
+  border-radius: 50%;
+  background: #d86488;
+  box-shadow: 0 0 0 2px #f5bdcc;
+  will-change: transform, opacity;
+}
+
+.front-page-transition__station.is-north {
+  top: -6px;
+  left: calc(50% - 6px);
+}
+
+.front-page-transition__station.is-east {
+  top: calc(50% - 6px);
+  right: -6px;
+}
+
+.front-page-transition__station.is-south {
+  bottom: -6px;
+  left: calc(50% - 6px);
+}
+
+.front-page-transition__station.is-west {
+  top: calc(50% - 6px);
+  left: -6px;
+}
+
+.front-page-transition__label {
+  color: #8f5368;
+  font: 700 14px/1.4 var(--front-font-family);
+  letter-spacing: 0;
+}
+
+@media (max-width: 389px) {
+  .front-page-transition__track {
+    width: 132px;
+    height: 132px;
+  }
+
+  .front-page-transition__track > img {
+    width: 62px;
+    height: 62px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .front-page-transition__progress,
+  .front-page-transition__station {
+    will-change: auto;
+  }
+}

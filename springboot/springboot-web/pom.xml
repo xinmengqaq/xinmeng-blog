@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.xinmengqaq</groupId>
+        <artifactId>springboot</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>springboot-web</artifactId>
+
+    <dependencies>
+        <!-- springboot-common：启动模块加载公共配置、JWT 工具、统一异常和返回结构 -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- springboot-admin：启动模块依赖管理员功能模块，扫描管理员 Controller、Service、Mapper -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-admin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- springboot-article：启动模块依赖文章功能模块，扫描文章 Controller、Service、Mapper -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-article</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- springboot-site：启动模块加载站点配置公开读取与后续管理能力 -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-site</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Spring Boot 打包插件：只有启动模块需要生成可运行 jar -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

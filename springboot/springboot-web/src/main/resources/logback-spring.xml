@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <!-- [日志] ConsoleAppender + encoder
+         Logback 的 appender 决定日志输出目标：ConsoleAppender 输出到控制台，FileAppender/RollingFileAppender 输出到文件。
+         encoder 负责把日志事件格式化成文本，pattern 定义格式：%d 时间 %-5level 级别 [%thread] 线程 %logger{36} 类名 %msg 内容。 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- [日志] RollingFileAppender + SizeAndTimeBasedRollingPolicy
+         RollingFileAppender 是滚动文件 appender，写到 file 指定的当前日志文件，满足条件后把当前文件归档、新建文件继续写。
+         SizeAndTimeBasedRollingPolicy 是"按大小+按时间"双触发滚动策略：到了 maxFileSize 或跨天任一条件满足就滚动。
+         fileNamePattern 同时含 %d（日期）和 %i（当天序号），两个都是必填：%d 按天归档，%i 同一天内满大小后序号递增。
+         .gz 后缀让归档文件自动 gzip 压缩，省磁盘。
+         maxFileSize 单个文件上限 20MB；maxHistory 保留 30 天；totalSizeCap 所有历史文件总上限 500MB，超过删最老的。
+         cleanHistoryOnStart=true 启动时清理超期或超总量的历史文件。
+         像写日记本，一本写满 20MB 或跨天就换新本，旧本按"日期-第几本"编号压缩归档；书架最多放 30 天的本子、总共不超过 500MB，放不下就扔最老的，每次开新书架前先清理一遍过期本。
+         ${LOG_PATH:-logs}：Logback 属性默认值语法，LOG_PATH 未配置时用 logs，配置了就用配置值。 -->
+    <appender name="ARTICLE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH:-logs}/article-operation.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH:-logs}/article-operation.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- [日志] logger level
+         logger 按 name（通常是包名）划分日志来源，level 控制该包的输出级别：TRACE<DEBUG<INFO<WARN<ERROR。
+         com.xinmengqaq.springboot 设 INFO 只输出业务重要日志，子包 mapper 设 DEBUG 输出更细的调用信息。
+         root 是所有 logger 的根默认，未被具体 logger 命中的都走 root。 -->
+    <logger name="com.xinmengqaq.springboot" level="INFO"/>
+    <logger name="com.xinmengqaq.springboot.mapper" level="DEBUG"/>
+
+    <logger name="org.springframework.transaction" level="DEBUG"/>
+
+    <logger name="org.springframework.jdbc.datasource.DataSourceTransactionManager" level="DEBUG"/>
+
+    <!-- [日志] ARTICLE_OPERATION 专用 logger + additivity
+         additivity="false" 关闭向上追加：默认 logger 的日志会先走自己的 appender，再向上传播给祖先（root）的 appender，
+         导致同一条日志在控制台输出两次。关掉后只走这里显式绑定的 appender，不传播到 root。
+         显式绑定 CONSOLE 和 ARTICLE_FILE，让文章行为日志同时进控制台和文件，且控制台只出现一次。
+         普通业务日志走 root 的 CONSOLE，不会进 ARTICLE_FILE；MyBatis SQL 走 StdOutImpl 也不进文件。
+         像邮件抄送，关掉"自动抄送给上级"（additivity=false），只发给指定收件人（CONSOLE + ARTICLE_FILE），避免同一封信收件人收到两次。 -->
+    <logger name="ARTICLE_OPERATION" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ARTICLE_FILE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

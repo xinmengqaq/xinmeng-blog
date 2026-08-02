@@ -1,0 +1,127 @@
+.taxonomy-page {
+  gap: 20px;
+}
+.taxonomy-page > .ui-page-header {
+  padding-bottom: 8px;
+}
+.taxonomy-toolbar {
+  align-items: end;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 180px;
+  padding: 18px 20px;
+}
+.taxonomy-toolbar label {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 590;
+}
+.taxonomy-toolbar--search {
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+}
+.taxonomy-toolbar--search label {
+  grid-column: 1 / -1;
+}
+.taxonomy-select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font: inherit;
+  height: 42px;
+  padding: 0 12px;
+  width: 100%;
+}
+.taxonomy-select:focus,
+.taxonomy-textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
+}
+.taxonomy-list {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.taxonomy-list-head,
+.taxonomy-list-row {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  padding: 15px 20px;
+}
+.taxonomy-list-head {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.taxonomy-list-head--category,
+.taxonomy-list-row--category {
+  grid-template-columns: minmax(240px, 1.5fr) 90px 100px 70px 110px 110px;
+}
+.taxonomy-list-head--tag,
+.taxonomy-list-row--tag {
+  grid-template-columns: minmax(240px, 1fr) 120px 140px 110px;
+}
+.taxonomy-list-row {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  min-height: 76px;
+}
+.taxonomy-list-row strong {
+  color: var(--color-text);
+  font-weight: 620;
+}
+.taxonomy-list-row__name {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.taxonomy-list-row__name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.taxonomy-status {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+.taxonomy-status svg {
+  height: 15px;
+  stroke-width: 1.8;
+  width: 15px;
+}
+.taxonomy-list-row__actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.taxonomy-dialog-form {
+  display: grid;
+  gap: 18px;
+}
+.taxonomy-dialog-form__row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+.taxonomy-textarea {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.6;
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+}

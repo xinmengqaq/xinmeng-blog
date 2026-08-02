@@ -1,0 +1,319 @@
+.station-hero__brand-reveal {
+  position: relative;
+  display: inline-grid;
+  width: 88px;
+  height: 88px;
+  place-items: center;
+}
+
+.station-hero__mark-shell {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  transition: transform 180ms ease;
+}
+
+.station-hero__mark {
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.station-hero__reveal-rail {
+  position: absolute;
+  top: 43px;
+  left: 6px;
+  z-index: 1;
+  width: 76px;
+  height: 28px;
+  border-top: 2px solid rgb(241 154 178 / 88%);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.station-hero__reveal-station {
+  position: absolute;
+  top: 40px;
+  left: 39px;
+  z-index: 3;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff9fc;
+  border-radius: 50%;
+  background: #c95778;
+  box-shadow: 0 0 0 3px rgb(241 154 178 / 22%);
+  opacity: 0;
+}
+
+.station-hero__title-particle {
+  position: absolute;
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff 0 28%,
+    #ffdbe5 32% 58%,
+    #d95f82 100%
+  );
+  box-shadow:
+    0 0 0 2px rgb(255 223 232 / 20%),
+    0 0 10px rgb(201 87 120 / 48%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.station-hero__title-particles {
+  position: absolute;
+  top: 112px;
+  left: clamp(245px, 24vw, 350px);
+  width: 72px;
+  height: 56px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.station-hero__title-particle {
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(
+    circle,
+    #fff 0 30%,
+    #ffd4e0 36% 62%,
+    #c95778 100%
+  );
+  box-shadow:
+    0 0 0 2px rgb(255 234 240 / 22%),
+    0 0 9px rgb(201 87 120 / 46%);
+}
+
+.station-hero__title-particle--1 {
+  top: 8px;
+  left: 6px;
+}
+
+.station-hero__title-particle--2 {
+  top: 18px;
+  left: 28px;
+  width: 4px;
+  height: 4px;
+}
+
+.station-hero__title-particle--3 {
+  top: 2px;
+  left: 43px;
+  width: 5px;
+  height: 5px;
+}
+
+.station-hero__title-particle--4 {
+  top: 31px;
+  left: 48px;
+  width: 4px;
+  height: 4px;
+}
+
+.station-hero__title-particle--5 {
+  top: 11px;
+  left: 64px;
+  width: 3px;
+  height: 3px;
+}
+
+.station-hero__title-particle--6 {
+  top: 41px;
+  left: 15px;
+  width: 5px;
+  height: 5px;
+}
+
+.station-hero__title-particle--7 {
+  top: 47px;
+  left: 58px;
+  width: 3px;
+  height: 3px;
+}
+
+.front-pointer-petals,
+.front-pointer-petals img,
+.front-pointer-petals span {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 55;
+  pointer-events: none;
+  user-select: none;
+}
+
+.front-pointer-petals__follower {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 94%))
+    drop-shadow(1px 2px 0 rgb(74 48 66 / 42%))
+    drop-shadow(0 5px 7px rgb(201 87 120 / 24%));
+  transform-origin: 5px 1px;
+  will-change: transform, opacity;
+}
+
+.front-pointer-petals__trail {
+  width: 5px;
+  height: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 255 / 100%) 0 16%,
+    rgb(255 211 223 / 96%) 30%,
+    rgb(241 154 178 / 88%) 58%,
+    rgb(201 87 120 / 0%) 100%
+  );
+  box-shadow:
+    0 0 5px rgb(255 255 255 / 88%),
+    0 0 11px rgb(241 154 178 / 54%),
+    0 0 18px rgb(201 87 120 / 28%);
+  filter: saturate(1.08);
+  will-change: transform, opacity;
+}
+
+.front-pointer-petals__trail--2 {
+  width: 4px;
+  height: 8px;
+}
+
+.front-pointer-petals__trail--3 {
+  width: 8px;
+  height: 4px;
+}
+
+.front-pointer-petals__trail--4 {
+  width: 3px;
+  height: 3px;
+}
+
+.front-pointer-petals__particle {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: #e66f91;
+  box-shadow:
+    0 0 4px rgb(255 255 255 / 90%),
+    0 0 9px rgb(201 87 120 / 42%);
+  will-change: transform, opacity;
+}
+
+.front-pointer-petals__particle--2 {
+  width: 4px;
+  height: 8px;
+  background: #f19ab2;
+}
+
+.front-pointer-petals__particle--3 {
+  width: 8px;
+  height: 4px;
+  background: #c95778;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.front-custom-cursor:not(.front-native-cursor),
+  html.front-custom-cursor:not(.front-native-cursor) body,
+  html.front-custom-cursor:not(.front-native-cursor) body * {
+    cursor: none !important;
+  }
+}
+
+.front-motion-toggle--mobile {
+  display: none;
+}
+
+.front-motion-is-static .front-scene-banner__wave,
+.front-motion-is-static .front-scene-banner__wave::before {
+  animation: none;
+}
+
+.front-motion-is-static .ui-button--loading .ui-button__icon svg,
+.front-motion-is-static .ui-state--loading svg {
+  animation: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .front-motion-is-enabled
+    .station-hero__brand-reveal:hover
+    .station-hero__mark {
+    transform: scale(1.045) rotate(1.5deg);
+  }
+}
+
+@media (max-width: 767px) {
+  .front-motion-toggle--desktop {
+    display: none;
+  }
+
+  .front-motion-toggle--mobile {
+    position: static;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    justify-content: start;
+    width: 100%;
+    height: 52px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 0;
+    border-top: 1px solid rgb(238 142 167 / 24%);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--front-ink);
+    text-align: left;
+    backdrop-filter: none;
+  }
+
+  .front-motion-toggle--mobile:hover {
+    background: var(--front-pink-soft);
+    transform: none;
+  }
+
+  .front-motion-toggle--mobile > .front-motion-toggle__label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    color: inherit;
+    white-space: normal;
+    clip-path: none;
+  }
+
+  .station-hero__brand-reveal {
+    width: 0;
+    height: 0;
+  }
+
+  .station-hero__title-particles {
+    top: 68px;
+    left: min(70%, 220px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .front-pointer-petals,
+  .front-petals {
+    display: none;
+  }
+
+  .front-scene-banner__wave,
+  .front-scene-banner__wave::before {
+    animation: none;
+  }
+
+  .front-scene-banner__media > *,
+  .station-hero__mark,
+  .station-hero__title-text,
+  .station-hero__welcome > span,
+  .station-clock > *,
+  .station-message > * {
+    transition: none;
+    transform: none;
+  }
+}
