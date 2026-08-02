@@ -43,9 +43,12 @@
 | `blog-fastapi` | Python 3.13、FastAPI、SQLAlchemy、asyncpg、Pillow、PyJWT |
 | 数据库 | PostgreSQL 18 |
 
-## 致谢
+## 第三方资源
 
-感谢 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC) 与 [寒蝉圆黑体（Chill Round Gothic）](https://github.com/Warren2060/ChillRoundGothic) 提供字体，感谢 [Lucide Icons](https://lucide.dev/) 提供图标。字体均遵循 SIL Open Font License 1.1。
+- 字体：[Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)、[寒蝉圆黑体（Chill Round Gothic）](https://github.com/Warren2060/ChillRoundGothic)
+- 图标：[Lucide Icons](https://lucide.dev/)
+
+字体遵循 SIL Open Font License 1.1。
 
 ## 项目结构
 
