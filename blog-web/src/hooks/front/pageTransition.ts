@@ -63,10 +63,11 @@ export const useCurrentPublicPageWaiting = () => {
   return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
-export const usePageTransitionActive = () => {
-  const waiting = useCurrentPublicPageWaiting()
+export const usePageTransitionActive = (additionalWaiting = false) => {
+  const currentPageWaiting = useCurrentPublicPageWaiting()
   const visibleSinceRef = useRef<number | null>(null)
-  const [visible, setVisible] = useState(waiting)
+  const [visible, setVisible] = useState(currentPageWaiting)
+  const waiting = currentPageWaiting || (visible && additionalWaiting)
 
   useEffect(() => {
     if (waiting) {

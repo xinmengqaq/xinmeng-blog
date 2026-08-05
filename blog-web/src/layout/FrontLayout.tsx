@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 
 import { FrontHeader } from '@/components/front/layout/FrontHeader'
 import { FrontFooter } from '@/components/front/layout/FrontFooter'
@@ -11,7 +11,10 @@ import { PageTransition } from '@/components/front/atmosphere/PageTransition'
 import { frontSite } from '@/config/frontSite'
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
 import { usePageTransitionActive } from '@/hooks/front/pageTransition'
-import { FrontPageTransitionContext } from '@/hooks/front/pageTransitionContext'
+import {
+  FrontHomeHeroSettledContext,
+  FrontPageTransitionContext,
+} from '@/hooks/front/pageTransitionContext'
 import '@/styles/front.css'
 import '@/styles/front-home-featured-rail.css'
 import '@/styles/front-home.css'
@@ -25,7 +28,18 @@ let hasReportedFontLoadingError = false
 
 export const FrontLayout = () => {
   const { motionAllowed } = useFrontMotionPreference()
-  const pageTransitionActive = usePageTransitionActive()
+  const { key: locationKey, pathname } = useLocation()
+  const [homeHeroSettledKey, setHomeHeroSettledKey] = useState<string | null>(
+    null,
+  )
+
+  const waitingForHomeHero =
+    pathname === '/' && homeHeroSettledKey !== locationKey
+  const pageTransitionActive = usePageTransitionActive(waitingForHomeHero)
+  const reportHomeHeroSettled = useCallback(() => {
+    if (pathname === '/') setHomeHeroSettledKey(locationKey)
+  }, [locationKey, pathname])
+
   useEffect(() => {
     document.title = frontSite.name
 
@@ -41,22 +55,24 @@ export const FrontLayout = () => {
   }, [])
 
   return (
-    <FrontPageTransitionContext.Provider value={pageTransitionActive}>
-      <div
-        className={`app-shell app-shell--front ${motionAllowed ? 'front-motion-is-enabled' : 'front-motion-is-static'}`}
-      >
-        <PageTransition active={pageTransitionActive} />
-        <FrontHeader />
-        <main className="app-main">
-          <PageMotion>
-            <Outlet />
-          </PageMotion>
-        </main>
-        <FrontFooter />
-        <FrontAtmosphere />
-        <FrontPageScrollbar />
-        <FrontLive2DWidget />
-      </div>
-    </FrontPageTransitionContext.Provider>
+    <FrontHomeHeroSettledContext.Provider value={reportHomeHeroSettled}>
+      <FrontPageTransitionContext.Provider value={pageTransitionActive}>
+        <div
+          className={`app-shell app-shell--front ${motionAllowed ? 'front-motion-is-enabled' : 'front-motion-is-static'}`}
+        >
+          <PageTransition active={pageTransitionActive} />
+          <FrontHeader />
+          <main className="app-main">
+            <PageMotion>
+              <Outlet />
+            </PageMotion>
+          </main>
+          <FrontFooter />
+          <FrontAtmosphere />
+          <FrontPageScrollbar />
+          <FrontLive2DWidget />
+        </div>
+      </FrontPageTransitionContext.Provider>
+    </FrontHomeHeroSettledContext.Provider>
   )
 }

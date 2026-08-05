@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 
 import { FrontArticleImage } from '@/components/front/article'
-import { useFrontPageTransitionActive } from '@/hooks/front/pageTransitionContext'
+import {
+  useFrontPageTransitionActive,
+  useReportFrontHomeHeroSettled,
+} from '@/hooks/front/pageTransitionContext'
 import { usePublicSiteBackgroundQuery } from '@/queries/siteConfig'
 
 export const FrontSiteBackground = () => {
   const siteBackground = usePublicSiteBackgroundQuery()
   const pageTransitionActive = useFrontPageTransitionActive()
+  const reportHomeHeroSettled = useReportFrontHomeHeroSettled()
   const backgroundUrl = siteBackground.data?.backgroundUrl
   const [readyUrl, setReadyUrl] = useState<string | null>(null)
   const [revealedUrl, setRevealedUrl] = useState<string | null>(null)
@@ -18,6 +22,20 @@ export const FrontSiteBackground = () => {
       return () => cancelAnimationFrame(frame)
     }
   }, [backgroundUrl, pageTransitionActive, readyUrl])
+
+  useEffect(() => {
+    if (
+      siteBackground.isError ||
+      (siteBackground.isSuccess && !backgroundUrl)
+    ) {
+      reportHomeHeroSettled()
+    }
+  }, [
+    backgroundUrl,
+    reportHomeHeroSettled,
+    siteBackground.isError,
+    siteBackground.isSuccess,
+  ])
 
   if (siteBackground.isError) {
     return (
@@ -51,6 +69,7 @@ export const FrontSiteBackground = () => {
       decoding="async"
       fetchPriority="high"
       onReady={(result) => {
+        reportHomeHeroSettled()
         if (result === 'loaded') {
           setReadyUrl(backgroundUrl)
           setFailedUrl(null)

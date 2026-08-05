@@ -74,4 +74,49 @@ describe('前台页面圆环过渡', () => {
     // Then 不为展示动画而伪造圆环等待
     expect(result.current).toBe(false)
   })
+
+  it('首页主请求结束后应继续等待头图图片资源结算', async () => {
+    // Given 首次进入首页时主请求和头图图片都还没有准备好
+    vi.useFakeTimers()
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    let resolveRequest!: (value: {
+      featuredArticles: []
+      latestArticles: []
+    }) => void
+    const request = new Promise<{ featuredArticles: []; latestArticles: [] }>(
+      (resolve) => {
+        resolveRequest = resolve
+      },
+    )
+    const fetching = queryClient.fetchQuery({
+      queryKey: publicContentQueryKeys.home(),
+      queryFn: () => request,
+    })
+    const { result, rerender } = renderHook(
+      ({ waitingForHero }: { waitingForHero: boolean }) =>
+        usePageTransitionActive(waitingForHero),
+      {
+        initialProps: { waitingForHero: true },
+        wrapper: createWrapper(queryClient),
+      },
+    )
+
+    // When 主请求已经结束且最短可见时间也已经满足
+    await act(async () => {
+      resolveRequest({ featuredArticles: [], latestArticles: [] })
+      await fetching
+    })
+    act(() => vi.advanceTimersByTime(450))
+
+    // Then 圆环仍等待图片本身，而不提前露出透明头图
+    expect(result.current).toBe(true)
+
+    // When 图片触发加载成功或失败事件
+    await act(async () => rerender({ waitingForHero: false }))
+
+    // Then 圆环立即结束，不再等待头图后续入场动画
+    expect(result.current).toBe(false)
+  })
 })
