@@ -21,9 +21,9 @@ spring:
     proxy-target-class: true
 springdoc:
   api-docs:
-    enabled: ${DOCS_ENABLED:true}
+    enabled: ${DOCS_ENABLED:false}
   swagger-ui:
-    enabled: ${DOCS_ENABLED:true}
+    enabled: ${DOCS_ENABLED:false}
   writer-with-order-by-keys: false
 
 mybatis-plus:
@@ -37,11 +37,11 @@ mybatis-plus:
     # 开启后 MyBatis 自动把数据库下划线列名映射到 Java 驼峰属性：password_version -> passwordVersion。
     # 不开启则列名必须和属性名完全一致才能映射，否则查询结果对应字段为 null，是常见踩坑点。
     map-underscore-to-camel-case: true
-    # 笔记：[MyBatis·日志] log-impl=StdOutImpl
-    # 指定 MyBatis SQL 日志的实现类，StdOutImpl 直接用 System.out.println 输出 SQL 到控制台。
-    # 它不走 Logback，和 @Slf4j 业务日志是两套通道：SQL 日志走标准输出，业务日志走 Logback，互不干扰。
-    # 调试时看 SQL 用这个，上线后可关掉或换成 Slf4j 实现由 Logback 统一接管。
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 笔记：[MyBatis·日志] log-impl=NoLoggingImpl
+    # 生产环境使用 NoLoggingImpl 关闭 MyBatis SQL 日志，避免 SQL 与参数输出到控制台。
+    # 它只影响 MyBatis SQL 日志，不影响由 Logback 管理的业务告警与错误日志。
+    # 本地调试 SQL 时可在未提交的本地覆盖配置中改用 StdOutImpl，禁止将调试值带入生产包。
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
     # 二级缓存：开启后 MyBatis 会缓存查询结果，避免重复查询数据库，提高性能。
     cache-enabled: false
   # 全局配置：MyBatis Plus 提供的全局配置项，影响所有 Mapper 接口的默认行为。

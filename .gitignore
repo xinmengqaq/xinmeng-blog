@@ -96,6 +96,9 @@
 **/hs_err_pid*
 **/replay_pid*
 
+# 前端 Live2D 模型资源
+/blog-web/public/live2d/models/
+
 # IDE、操作系统与本地自动化工具
 **/.idea/
 **/.vscode/

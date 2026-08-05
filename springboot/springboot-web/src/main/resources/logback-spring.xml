@@ -40,20 +40,20 @@
 
     <!-- [日志] logger level
          logger 按 name（通常是包名）划分日志来源，level 控制该包的输出级别：TRACE<DEBUG<INFO<WARN<ERROR。
-         com.xinmengqaq.springboot 设 INFO 只输出业务重要日志，子包 mapper 设 DEBUG 输出更细的调用信息。
+         生产环境保持 INFO 基线，保留启动结果和必要业务事件；产生大量无用输出的第三方包再单独设为 WARN。
          root 是所有 logger 的根默认，未被具体 logger 命中的都走 root。 -->
     <logger name="com.xinmengqaq.springboot" level="INFO"/>
-    <logger name="com.xinmengqaq.springboot.mapper" level="DEBUG"/>
+    <logger name="com.xinmengqaq.springboot.mapper" level="WARN"/>
 
-    <logger name="org.springframework.transaction" level="DEBUG"/>
+    <logger name="org.springframework.transaction" level="WARN"/>
 
-    <logger name="org.springframework.jdbc.datasource.DataSourceTransactionManager" level="DEBUG"/>
+    <logger name="org.springframework.jdbc.datasource.DataSourceTransactionManager" level="WARN"/>
 
     <!-- [日志] ARTICLE_OPERATION 专用 logger + additivity
          additivity="false" 关闭向上追加：默认 logger 的日志会先走自己的 appender，再向上传播给祖先（root）的 appender，
          导致同一条日志在控制台输出两次。关掉后只走这里显式绑定的 appender，不传播到 root。
          显式绑定 CONSOLE 和 ARTICLE_FILE，让文章行为日志同时进控制台和文件，且控制台只出现一次。
-         普通业务日志走 root 的 CONSOLE，不会进 ARTICLE_FILE；MyBatis SQL 走 StdOutImpl 也不进文件。
+         普通业务日志走 root 的 CONSOLE，不会进 ARTICLE_FILE；MyBatis SQL 已由 NoLoggingImpl 关闭。
          像邮件抄送，关掉"自动抄送给上级"（additivity=false），只发给指定收件人（CONSOLE + ARTICLE_FILE），避免同一封信收件人收到两次。 -->
     <logger name="ARTICLE_OPERATION" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
