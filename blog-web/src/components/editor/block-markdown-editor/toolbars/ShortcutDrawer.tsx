@@ -8,16 +8,13 @@ const shortcutGroups = [
       ['Ctrl + Z', '撤销'],
       ['Ctrl + Shift + Z / Ctrl + Y', '重做'],
       ['Esc', '关闭当前浮层'],
-      ['/', '打开块类型菜单'],
     ],
   },
   {
     title: '块操作',
     items: [
       ['Alt + ↑ / Alt + ↓', '移动当前块'],
-      ['Ctrl + Shift + D', '复制当前块'],
-      ['Ctrl + Backspace', '删除当前空块'],
-      ['Enter', '新建下一块'],
+      ['Enter', '按光标位置拆分当前块'],
       ['Shift + Enter', '块内换行'],
     ],
   },
@@ -28,7 +25,6 @@ const shortcutGroups = [
       ['Ctrl + I', '斜体'],
       ['Ctrl + U', '下划线'],
       ['Ctrl + Shift + X', '删除线'],
-      ['Ctrl + E', '行内代码'],
       ['Ctrl + K', '设置链接'],
     ],
   },
@@ -36,7 +32,8 @@ const shortcutGroups = [
     title: '列表',
     items: [
       ['Tab / Shift + Tab', '调整列表缩进'],
-      ['Enter', '新建同级列表项'],
+      ['Enter', '按光标位置拆分列表项'],
+      ['Enter / Backspace', '空列表项退出列表'],
     ],
   },
   {
@@ -44,6 +41,7 @@ const shortcutGroups = [
     items: [
       ['Ctrl + Enter', '在下方插入新行'],
       ['Ctrl + Shift + Enter', '在上方插入新行'],
+      ['Tab / Shift + Tab', '移动到相邻单元格'],
     ],
   },
 ] as const

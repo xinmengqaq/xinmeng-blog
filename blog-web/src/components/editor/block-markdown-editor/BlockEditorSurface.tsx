@@ -44,7 +44,7 @@ type BlockEditorSurfaceProps = Pick<
 export const BlockEditorSurface = ({
   readOnly = false,
   disabled = false,
-  placeholder = '输入正文，或按 / 插入内容块',
+  placeholder = '输入正文',
   className,
   model,
   interactions,

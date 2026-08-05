@@ -85,7 +85,7 @@ describe('BlockMarkdownEditor', () => {
     expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument()
   })
 
-  it('空段落输入 / 应打开块类型菜单并支持 Esc 关闭', () => {
+  it('空段落输入斜杠应保留普通文字输入', () => {
     const { container } = render(
       <BlockMarkdownEditor value="" onChange={vi.fn()} />,
     )
@@ -93,11 +93,56 @@ describe('BlockMarkdownEditor', () => {
       '[data-editor-input]',
     )!
 
-    fireEvent.keyDown(paragraph, { key: '/' })
-    expect(screen.getByRole('menu')).toBeInTheDocument()
+    const allowed = fireEvent.keyDown(paragraph, { key: '/' })
 
-    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    expect(allowed).toBe(true)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('Enter 应按光标位置拆分普通段落', () => {
+    const onChange = vi.fn()
+    render(<BlockMarkdownEditor value="前半段后半段" onChange={onChange} />)
+    const paragraph = screen.getByText('前半段后半段')
+    const textNode = paragraph.firstChild!
+    const selection = window.getSelection()!
+    const range = document.createRange()
+    range.setStart(textNode, 3)
+    range.collapse(true)
+    selection.removeAllRanges()
+    selection.addRange(range)
+
+    fireEvent.keyDown(paragraph, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenLastCalledWith('前半段\n\n后半段')
+  })
+
+  it('输入法组合态按 Enter 应交给输入法确认候选词', () => {
+    const onChange = vi.fn()
+    render(<BlockMarkdownEditor value="输入中" onChange={onChange} />)
+    const paragraph = screen.getByText('输入中')
+
+    const allowed = fireEvent.keyDown(paragraph, {
+      key: 'Enter',
+      isComposing: true,
+    })
+
+    expect(allowed).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('不再占用浏览器常用的 Ctrl+E 和 Ctrl+Shift+D', () => {
+    render(<BlockMarkdownEditor value="正文" onChange={vi.fn()} />)
+    const paragraph = screen.getByText('正文')
+    selectText(paragraph)
+
+    expect(fireEvent.keyDown(paragraph, { key: 'e', ctrlKey: true })).toBe(true)
+    expect(
+      fireEvent.keyDown(paragraph, {
+        key: 'd',
+        ctrlKey: true,
+        shiftKey: true,
+      }),
+    ).toBe(true)
   })
 
   it('输入 Markdown 快捷语法应转换当前段落块', () => {
@@ -480,6 +525,23 @@ describe('BlockMarkdownEditor', () => {
     expect(onChange).toHaveBeenLastCalledWith('- 第一项\n- \n- 第二项')
   })
 
+  it('列表项 Enter 应按光标位置拆分前后文字', () => {
+    const onChange = vi.fn()
+    render(<BlockMarkdownEditor value="- 前半段后半段" onChange={onChange} />)
+    const item = screen.getByText('前半段后半段')
+    const textNode = item.firstChild!
+    const selection = window.getSelection()!
+    const range = document.createRange()
+    range.setStart(textNode, 3)
+    range.collapse(true)
+    selection.removeAllRanges()
+    selection.addRange(range)
+
+    fireEvent.keyDown(item, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenLastCalledWith('- 前半段\n- 后半段')
+  })
+
   it('空列表项按 Backspace 应退出为段落', () => {
     const onChange = vi.fn()
     const { container } = render(
@@ -490,6 +552,23 @@ describe('BlockMarkdownEditor', () => {
     fireEvent.input(item)
 
     fireEvent.keyDown(item, { key: 'Backspace' })
+
+    expect(container.querySelectorAll('.block-editor__list li')).toHaveLength(1)
+    expect(
+      container.querySelector('.block-editor__paragraph'),
+    ).toBeInTheDocument()
+  })
+
+  it('空列表项按 Enter 应退出为段落', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <BlockMarkdownEditor value={'- 第一项\n- 临时项'} onChange={onChange} />,
+    )
+    const item = screen.getByText('临时项')
+    item.innerHTML = ''
+    fireEvent.input(item)
+
+    fireEvent.keyDown(item, { key: 'Enter' })
 
     expect(container.querySelectorAll('.block-editor__list li')).toHaveLength(1)
     expect(
@@ -881,5 +960,55 @@ describe('BlockMarkdownEditor', () => {
 
     expect(allowed).toBe(false)
     expect(onSaveShortcut).toHaveBeenCalledOnce()
+  })
+
+  it('退格键聚焦在块工具按钮时应保留原生行为，不删除文档块', () => {
+    const onChange = vi.fn()
+    render(<BlockMarkdownEditor value="" onChange={onChange} />)
+
+    const toolbarButton = screen.getByRole('button', { name: '打开块工具' })
+    toolbarButton.focus()
+
+    const allowed = fireEvent.keyDown(toolbarButton, {
+      key: 'Backspace',
+      ctrlKey: true,
+    })
+
+    expect(allowed).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(
+      document.querySelector(
+        '[data-editor-input][data-placeholder="输入正文"]',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('空编辑块中的 Ctrl + Backspace 应保留原生文字编辑行为', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <BlockMarkdownEditor value="" onChange={onChange} />,
+    )
+    const paragraph = container.querySelector<HTMLElement>(
+      '[data-editor-input]',
+    )!
+
+    const allowed = fireEvent.keyDown(paragraph, {
+      key: 'Backspace',
+      ctrlKey: true,
+    })
+
+    expect(allowed).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('未配置保存回调时 Ctrl + S 应保留浏览器默认行为', () => {
+    render(<BlockMarkdownEditor value="正文" onChange={vi.fn()} />)
+
+    const allowed = fireEvent.keyDown(screen.getByText('正文'), {
+      key: 's',
+      ctrlKey: true,
+    })
+
+    expect(allowed).toBe(true)
   })
 })

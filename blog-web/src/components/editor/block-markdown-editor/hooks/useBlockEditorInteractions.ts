@@ -8,8 +8,7 @@ import {
   useState,
 } from 'react'
 
-import { duplicateBlock, insertBlockAfter, moveBlock } from '../core/commands'
-import { createParagraphBlock, isBlockEmpty } from '../core/blockModel'
+import { moveBlock } from '../core/commands'
 import type { EditorBlock } from '../types'
 import { getClipboardBlocks } from '../utils/clipboard'
 import {
@@ -17,6 +16,7 @@ import {
   getEditorSelection,
   normalizeEditorLink,
   resolveEditorSelection,
+  splitEditorAtCaret,
   selectEditorWordAtPoint,
   setSelectionLink,
   toggleInlineTag,
@@ -184,11 +184,9 @@ export const useBlockEditorInteractions = (
               ? 'em'
               : key === 'u'
                 ? 'u'
-                : key === 'e'
-                  ? 'code'
-                  : key === 'x' && event.shiftKey
-                    ? 'del'
-                    : null
+                : key === 'x' && event.shiftKey
+                  ? 'del'
+                  : null
         if (format) {
           event.preventDefault()
           runTextCommand((selection) => toggleInlineTag(selection, format))
@@ -205,17 +203,8 @@ export const useBlockEditorInteractions = (
       }
       if (
         !readOnly &&
-        event.key === '/' &&
-        block.type === 'paragraph' &&
-        isBlockEmpty(block)
-      ) {
-        event.preventDefault()
-        model.setInsertAfterId(block.id)
-        return
-      }
-      if (
-        !readOnly &&
         event.key === 'Enter' &&
+        !event.nativeEvent.isComposing &&
         !event.shiftKey &&
         !event.ctrlKey &&
         !event.metaKey &&
@@ -224,12 +213,10 @@ export const useBlockEditorInteractions = (
           block.type === 'heading' ||
           block.type === 'quote')
       ) {
+        const split = splitEditorAtCaret(event.currentTarget)
+        if (!split) return
         event.preventDefault()
-        const paragraph = createParagraphBlock()
-        model.commit(
-          insertBlockAfter(model.blocksRef.current, block.id, paragraph),
-        )
-        model.focusBlock(paragraph.id)
+        model.splitTextBlock(block.id, split.beforeHtml, split.afterHtml)
       }
     }
 
@@ -240,27 +227,42 @@ export const useBlockEditorInteractions = (
       model.setShortcutDrawerOpen(false)
       return
     }
+    const target = event.target as HTMLElement
+    const editorInput = target.closest<HTMLElement>('[data-editor-input]')
     const modifier = event.ctrlKey || event.metaKey
     const key = event.key.toLowerCase()
-    if (modifier && key === 's' && !event.altKey && !event.shiftKey) {
+    if (
+      editorInput &&
+      modifier &&
+      key === 's' &&
+      !event.altKey &&
+      !event.shiftKey &&
+      onSaveShortcut
+    ) {
       event.preventDefault()
       onSaveShortcut?.()
       return
     }
-    if (modifier && !event.altKey && key === 'z') {
+    if (editorInput && modifier && !event.altKey && key === 'z') {
       event.preventDefault()
       model.applyHistory(event.shiftKey ? 'redo' : 'undo')
       return
     }
-    if (modifier && !event.altKey && key === 'y' && !event.shiftKey) {
+    if (
+      editorInput &&
+      modifier &&
+      !event.altKey &&
+      key === 'y' &&
+      !event.shiftKey
+    ) {
       event.preventDefault()
       model.applyHistory('redo')
       return
     }
-    const target = event.target as HTMLElement
     const blockId =
       target.closest<HTMLElement>('[data-block-id]')?.dataset.blockId
     if (!blockId) return
+    if (!target.closest<HTMLElement>('[data-editor-input]')) return
     if (
       event.altKey &&
       !modifier &&
@@ -276,23 +278,6 @@ export const useBlockEditorInteractions = (
       )
       model.focusBlock(blockId)
       return
-    }
-    if (modifier && event.shiftKey && key === 'd' && !event.altKey) {
-      event.preventDefault()
-      const current = model.blocksRef.current
-      const index = current.findIndex((block) => block.id === blockId)
-      const next = duplicateBlock(current, blockId)
-      model.commit(next)
-      const duplicateId = next[index + 1]?.id
-      if (duplicateId) model.focusBlock(duplicateId)
-      return
-    }
-    if (modifier && key === 'backspace' && !event.altKey && !event.shiftKey) {
-      const block = model.blocksRef.current.find((item) => item.id === blockId)
-      if (block && isBlockEmpty(block)) {
-        event.preventDefault()
-        model.deleteToolbarBlock(blockId)
-      }
     }
   }
 

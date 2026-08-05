@@ -183,6 +183,35 @@ export const useBlockEditorModel = (
     [commit, focusBlock],
   )
 
+  const splitTextBlock = useCallback(
+    (blockId: string, beforeHtml: string, afterHtml: string) => {
+      const current = blocksRef.current
+      const index = current.findIndex((block) => block.id === blockId)
+      const block = current[index]
+      if (
+        index < 0 ||
+        !block ||
+        !(
+          block.type === 'paragraph' ||
+          block.type === 'heading' ||
+          block.type === 'quote'
+        )
+      ) {
+        return
+      }
+      const paragraph = { ...createParagraphBlock(), html: afterHtml }
+      const updatedBlock = { ...block, html: beforeHtml }
+      commit([
+        ...current.slice(0, index),
+        updatedBlock,
+        paragraph,
+        ...current.slice(index + 1),
+      ])
+      focusBlock(paragraph.id)
+    },
+    [commit, focusBlock],
+  )
+
   const convertShortcut = useCallback(
     (blockId: string, text: string) => {
       const shortcut = getMarkdownBlockShortcut(text)
@@ -222,6 +251,7 @@ export const useBlockEditorModel = (
     duplicateToolbarBlock,
     deleteToolbarBlock,
     exitListBlockItem,
+    splitTextBlock,
     convertShortcut,
   }
 }

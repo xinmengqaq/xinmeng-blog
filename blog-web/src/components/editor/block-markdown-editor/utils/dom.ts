@@ -66,6 +66,30 @@ export const getEditorSelection = (
   }
 }
 
+export const splitEditorAtCaret = (editable: HTMLElement) => {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
+    return null
+  }
+  const range = selection.getRangeAt(0)
+  if (!editable.contains(range.startContainer)) return null
+  const before = range.cloneRange()
+  before.selectNodeContents(editable)
+  before.setEnd(range.startContainer, range.startOffset)
+  const after = range.cloneRange()
+  after.selectNodeContents(editable)
+  after.setStart(range.startContainer, range.startOffset)
+  const toHtml = (fragment: DocumentFragment) => {
+    const container = document.createElement('div')
+    container.append(fragment)
+    return container.innerHTML
+  }
+  return {
+    beforeHtml: toHtml(before.cloneContents()),
+    afterHtml: toHtml(after.cloneContents()),
+  }
+}
+
 type CaretDocument = Document & {
   caretPositionFromPoint?: (
     x: number,

@@ -202,6 +202,30 @@ export const insertListItemAfter = (
   }
 }
 
+export const splitListItem = (
+  block: ListBlock,
+  itemId: string,
+  beforeHtml: string,
+  afterHtml: string,
+) => {
+  const index = block.items.findIndex((item) => item.id === itemId)
+  if (index < 0) return block
+  const current = block.items[index]
+  const next = createListItem(afterHtml, {
+    indent: current.indent,
+    checked: block.type === 'task-list' ? false : undefined,
+  })
+  return {
+    ...block,
+    items: [
+      ...block.items.slice(0, index),
+      { ...current, html: beforeHtml },
+      next,
+      ...block.items.slice(index + 1),
+    ],
+  }
+}
+
 export const exitListItem = (
   blocks: EditorBlock[],
   blockId: string,

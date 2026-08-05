@@ -27,7 +27,9 @@ export const getListKeyboardAction = (
   if (key === 'Tab') {
     return options.shiftKey ? 'decrease-indent' : 'increase-indent'
   }
-  if (key === 'Enter' && !options.shiftKey) return 'insert-item'
+  if (key === 'Enter' && !options.shiftKey) {
+    return options.isEmpty ? 'exit-list' : 'insert-item'
+  }
   if (key === 'Backspace' && options.isEmpty) return 'exit-list'
   return null
 }

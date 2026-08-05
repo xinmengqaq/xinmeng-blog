@@ -182,6 +182,10 @@ const TableBlockComponent = ({
   }
 
   const handleCellKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.nativeEvent.isComposing) {
+      onKeyDown(event)
+      return
+    }
     if (
       (event.ctrlKey || event.metaKey) &&
       event.key === 'Enter' &&

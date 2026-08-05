@@ -1,6 +1,11 @@
 import { memo, type KeyboardEvent, useRef } from 'react'
 
-import { changeListItemIndent, insertListItemAfter } from '../core/commands'
+import {
+  changeListItemIndent,
+  insertListItemAfter,
+  splitListItem,
+} from '../core/commands'
+import { splitEditorAtCaret } from '../utils/dom'
 import type { ListBlock as ListBlockType } from '../types'
 import { getListKeyboardAction } from '../utils/keyboard'
 
@@ -78,6 +83,10 @@ const ListBlockComponent = ({
               })
             }
             onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing) {
+                onKeyDown(event)
+                return
+              }
               const action = getListKeyboardAction(event.key, {
                 shiftKey: event.shiftKey,
                 isEmpty: (event.currentTarget.textContent ?? '').trim() === '',
@@ -101,7 +110,15 @@ const ListBlockComponent = ({
                 return
               }
               if (action === 'insert-item') {
-                const next = insertListItemAfter(block, item.id)
+                const split = splitEditorAtCaret(event.currentTarget)
+                const next = split
+                  ? splitListItem(
+                      block,
+                      item.id,
+                      split.beforeHtml,
+                      split.afterHtml,
+                    )
+                  : insertListItemAfter(block, item.id)
                 onChange(next)
                 focusItem(next.items[index + 1].id)
                 return
