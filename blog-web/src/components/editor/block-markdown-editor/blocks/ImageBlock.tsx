@@ -17,6 +17,12 @@ export const ImageBlock = ({
   onSelect,
 }: ImageBlockProps) => {
   const [failed, setFailed] = useState(false)
+  const justifyItems =
+    block.align === 'left'
+      ? 'start'
+      : block.align === 'right'
+        ? 'end'
+        : 'center'
 
   useEffect(() => setFailed(false), [block.url])
 
@@ -24,7 +30,7 @@ export const ImageBlock = ({
     <figure
       aria-selected={selected || undefined}
       className="block-editor__image"
-      style={{ textAlign: block.align }}
+      style={{ textAlign: block.align, justifyItems }}
       tabIndex={readOnly ? undefined : 0}
       onClick={(event) => onSelect?.(event.currentTarget)}
       onFocus={(event) => onSelect?.(event.currentTarget)}

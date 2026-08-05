@@ -1046,9 +1046,22 @@ describe('BlockMarkdownEditor', () => {
       screen.getByRole('img', { name: '封面' }).closest('figure'),
     ).toHaveStyle({
       textAlign: 'center',
+      justifyItems: 'center',
     })
     expect(onChange).toHaveBeenLastCalledWith(
       '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面"></p>',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '图片右对齐' }))
+
+    expect(
+      screen.getByRole('img', { name: '封面' }).closest('figure'),
+    ).toHaveStyle({
+      textAlign: 'right',
+      justifyItems: 'end',
+    })
+    expect(onChange).toHaveBeenLastCalledWith(
+      '<p style="text-align:right"><img src="https://example.com/a.png" alt="封面"></p>',
     )
   })
 
