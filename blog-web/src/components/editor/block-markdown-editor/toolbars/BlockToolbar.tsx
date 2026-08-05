@@ -29,6 +29,12 @@ import {
 import type { BlockType, EditorBlock } from '../types'
 import type { BlockInsertChoice } from './BlockInsertMenu'
 
+export type BlockSelectionModifiers = {
+  ctrlKey: boolean
+  metaKey: boolean
+  shiftKey: boolean
+}
+
 type BlockToolbarProps = {
   block: EditorBlock
   open: boolean
@@ -36,7 +42,8 @@ type BlockToolbarProps = {
   disableMoveUp: boolean
   disableMoveDown: boolean
   disableDelete: boolean
-  onToggle: () => void
+  selected: boolean
+  onToggle: (modifiers: BlockSelectionModifiers) => void
   onClose: () => void
   onConvert: (choice: BlockInsertChoice) => void
   onInsert: (type: BlockType) => void
@@ -80,6 +87,7 @@ const isCurrentType = (block: EditorBlock, choice: BlockInsertChoice) =>
 export const BlockToolbar = ({
   block,
   open,
+  selected,
   disabled,
   disableMoveUp,
   disableMoveDown,
@@ -110,12 +118,19 @@ export const BlockToolbar = ({
       <button
         ref={refs.setReference}
         aria-expanded={open}
+        aria-pressed={selected}
         aria-label="打开块工具"
         className="block-editor__block-handle"
         disabled={disabled}
         title="块工具"
         type="button"
-        onClick={onToggle}
+        onClick={(event) =>
+          onToggle({
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+          })
+        }
       >
         <GripVertical aria-hidden="true" />
       </button>

@@ -1,6 +1,7 @@
 import { memo, type KeyboardEvent } from 'react'
 
 import type { TextBlock } from '../types'
+import { preserveEditorCaretAfterUpdate } from '../utils/dom'
 
 type QuoteBlockProps = {
   block: TextBlock
@@ -19,9 +20,12 @@ const QuoteBlockComponent = ({
     className="block-editor__quote block-editor__editable"
     contentEditable={!readOnly}
     data-editor-input
-    onInput={(event) =>
-      onChange({ ...block, html: event.currentTarget.innerHTML })
-    }
+    onInput={(event) => {
+      const editable = event.currentTarget
+      preserveEditorCaretAfterUpdate(editable, () =>
+        onChange({ ...block, html: editable.innerHTML }),
+      )
+    }}
     onKeyDown={onKeyDown}
     suppressContentEditableWarning
     dangerouslySetInnerHTML={{ __html: block.html }}

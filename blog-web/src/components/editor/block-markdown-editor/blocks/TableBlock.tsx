@@ -25,6 +25,7 @@ import {
 } from '../core/commands'
 import { TableToolbar } from '../toolbars/TableToolbar'
 import type { TableBlock as TableBlockType, TextAlign } from '../types'
+import { preserveEditorCaretAfterUpdate } from '../utils/dom'
 
 type TableBlockProps = {
   block: TableBlockType
@@ -272,21 +273,24 @@ const TableBlockComponent = ({
                         contentEditable={!readOnly}
                         data-editor-input
                         data-table-cell-input
-                        onInput={(event) =>
-                          onChange({
-                            ...block,
-                            rows: block.rows.map((currentRow) =>
-                              currentRow.map((currentCell) =>
-                                currentCell.id === cell.id
-                                  ? {
-                                      ...currentCell,
-                                      html: event.currentTarget.innerHTML,
-                                    }
-                                  : currentCell,
+                        onInput={(event) => {
+                          const editable = event.currentTarget
+                          preserveEditorCaretAfterUpdate(editable, () =>
+                            onChange({
+                              ...block,
+                              rows: block.rows.map((currentRow) =>
+                                currentRow.map((currentCell) =>
+                                  currentCell.id === cell.id
+                                    ? {
+                                        ...currentCell,
+                                        html: editable.innerHTML,
+                                      }
+                                    : currentCell,
+                                ),
                               ),
-                            ),
-                          })
-                        }
+                            }),
+                          )
+                        }}
                         onKeyDown={handleCellKeyDown}
                         suppressContentEditableWarning
                         dangerouslySetInnerHTML={{ __html: cell.html }}

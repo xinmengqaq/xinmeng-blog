@@ -24,6 +24,7 @@ import {
 } from './hooks/useBlockEditorModel'
 import { BlockInsertMenu } from './toolbars/BlockInsertMenu'
 import { BlockToolbar } from './toolbars/BlockToolbar'
+import { BlockSelectionToolbar } from './toolbars/BlockSelectionToolbar'
 import { ShortcutDrawer } from './toolbars/ShortcutDrawer'
 import { TextToolbar } from './toolbars/TextToolbar'
 import { SelectedImageToolbar } from './toolbars/SelectedImageToolbar'
@@ -174,10 +175,27 @@ export const BlockEditorSurface = ({
         model.focusedRef.current = true
       }}
       onContextMenu={onRootContextMenu}
-      onKeyDown={interactions.editorKeyDown}
-      onMouseDown={(event) =>
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && model.selectedBlockIds.length) {
+          event.preventDefault()
+          model.clearBlockSelection()
+          return
+        }
+        interactions.editorKeyDown(event)
+      }}
+      onMouseDown={(event) => {
+        const target = event.target as HTMLElement
+        if (
+          model.selectedBlockIds.length &&
+          target.closest('[data-editor-input]') &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey
+        ) {
+          model.clearBlockSelection()
+        }
         interactions.openTextToolbarOnRightMouseDown(event)
-      }
+      }}
       onPaste={interactions.pasteBlocks}
     >
       {!readOnly ? (
@@ -202,11 +220,24 @@ export const BlockEditorSurface = ({
           </button>
         </div>
       ) : null}
+      {!readOnly && model.selectedBlockIds.length ? (
+        <BlockSelectionToolbar
+          count={model.selectedBlockIds.length}
+          disabled={disabled}
+          onClose={model.clearBlockSelection}
+          onDelete={model.deleteSelectedBlocks}
+          onParagraph={model.convertSelectedToParagraph}
+          onFormat={model.formatSelected}
+        />
+      ) : null}
       <div className="block-editor__document">
         {model.blocks.map((block, index) => (
           <div
             key={block.id}
-            className="block-editor__block"
+            className={`block-editor__block${model.selectedBlockIds.includes(block.id) ? ' is-multi-selected' : ''}`}
+            data-selected={
+              model.selectedBlockIds.includes(block.id) || undefined
+            }
             data-block-id={block.id}
           >
             {!readOnly ? (
@@ -220,6 +251,7 @@ export const BlockEditorSurface = ({
                   disableMoveDown={index === model.blocks.length - 1}
                   disableMoveUp={index === 0}
                   open={model.toolbarBlockId === block.id}
+                  selected={model.selectedBlockIds.includes(block.id)}
                   onClose={() => model.setToolbarBlockId(null)}
                   onConvert={(choice) => {
                     if (choice.type === 'image') {
@@ -235,7 +267,23 @@ export const BlockEditorSurface = ({
                   onMove={(direction) =>
                     model.moveToolbarBlock(block.id, direction)
                   }
-                  onToggle={() => {
+                  onToggle={(modifiers) => {
+                    if (
+                      modifiers.ctrlKey ||
+                      modifiers.metaKey ||
+                      modifiers.shiftKey
+                    ) {
+                      model.setToolbarBlockId(null)
+                      model.setInsertAfterId(null)
+                      interactions.dismissTextToolbar()
+                      model.setShortcutDrawerOpen(false)
+                      model.selectBlock(
+                        block.id,
+                        modifiers.shiftKey ? 'range' : 'toggle',
+                      )
+                      return
+                    }
+                    model.clearBlockSelection()
                     selectedImage.clear()
                     model.setInsertAfterId(null)
                     interactions.dismissTextToolbar()

@@ -1,6 +1,7 @@
 import { memo, type KeyboardEvent } from 'react'
 
 import type { TextBlock } from '../types'
+import { preserveEditorCaretAfterUpdate } from '../utils/dom'
 
 type ParagraphBlockProps = {
   block: TextBlock
@@ -25,8 +26,11 @@ const ParagraphBlockComponent = ({
     data-editor-input
     data-placeholder={placeholder}
     onInput={(event) => {
-      onChange({ ...block, html: event.currentTarget.innerHTML })
-      onTextChange(event.currentTarget.textContent ?? '')
+      const editable = event.currentTarget
+      preserveEditorCaretAfterUpdate(editable, () => {
+        onChange({ ...block, html: editable.innerHTML })
+        onTextChange(editable.textContent ?? '')
+      })
     }}
     onKeyDown={onKeyDown}
     suppressContentEditableWarning

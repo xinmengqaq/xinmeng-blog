@@ -61,6 +61,35 @@ describe('BlockMarkdownEditor', () => {
     expect(onChange).toHaveBeenLastCalledWith('修改后的 **正文**')
   })
 
+  it('退格删除文字并同步状态后应保留原生光标位置', () => {
+    const callbacks: FrameRequestCallback[] = []
+    const requestFrame = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callbacks.push(callback)
+        return callbacks.length
+      })
+    render(<BlockMarkdownEditor value="前中后" onChange={vi.fn()} />)
+    const paragraph = screen.getByText('前中后')
+    paragraph.focus()
+    paragraph.innerHTML = '前后'
+    const textNode = paragraph.firstChild!
+    const range = document.createRange()
+    range.setStart(textNode, 1)
+    range.collapse(true)
+    window.getSelection()?.removeAllRanges()
+    window.getSelection()?.addRange(range)
+
+    fireEvent.input(paragraph)
+    act(() => callbacks.splice(0).forEach((callback) => callback(0)))
+
+    const selection = window.getSelection()!
+    expect(requestFrame).toHaveBeenCalled()
+    expect(selection.anchorNode?.textContent).toBe('前后')
+    expect(selection.anchorOffset).toBe(1)
+    requestFrame.mockRestore()
+  })
+
   it('readOnly 时应禁止编辑并隐藏块创建入口', () => {
     render(<BlockMarkdownEditor value="只读正文" onChange={vi.fn()} readOnly />)
 
@@ -212,6 +241,83 @@ describe('BlockMarkdownEditor', () => {
     openFirstBlockToolbar()
     fireEvent.click(screen.getByRole('button', { name: '删除块' }))
     expect(onChange).toHaveBeenLastCalledWith('第二段\n\n第一段')
+  })
+
+  it('Ctrl 点击块柄应多选块并显示批量工具', () => {
+    render(
+      <BlockMarkdownEditor value={'第一段\n\n第二段'} onChange={vi.fn()} />,
+    )
+    const handles = screen.getAllByRole('button', { name: '打开块工具' })
+
+    fireEvent.click(handles[0], { ctrlKey: true })
+    fireEvent.click(handles[1], { ctrlKey: true })
+
+    expect(
+      screen.getByRole('toolbar', { name: '批量块工具' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('已选择 2 个块')).toBeInTheDocument()
+    expect(handles[0]).toHaveAttribute('aria-pressed', 'true')
+    expect(handles[1]).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('Shift 点击块柄应从选择锚点连续选择', () => {
+    const { container } = render(
+      <BlockMarkdownEditor
+        value={'第一段\n\n第二段\n\n第三段'}
+        onChange={vi.fn()}
+      />,
+    )
+    const handles = screen.getAllByRole('button', { name: '打开块工具' })
+
+    fireEvent.click(handles[0], { ctrlKey: true })
+    fireEvent.click(handles[2], { shiftKey: true })
+
+    expect(container.querySelectorAll('.is-multi-selected')).toHaveLength(3)
+  })
+
+  it('批量删除应一次删除全部已选块', () => {
+    const onChange = vi.fn()
+    render(
+      <BlockMarkdownEditor
+        value={'第一段\n\n第二段\n\n保留段'}
+        onChange={onChange}
+      />,
+    )
+    const handles = screen.getAllByRole('button', { name: '打开块工具' })
+    fireEvent.click(handles[0], { ctrlKey: true })
+    fireEvent.click(handles[1], { ctrlKey: true })
+
+    fireEvent.click(screen.getByRole('button', { name: '批量删除' }))
+
+    expect(onChange).toHaveBeenLastCalledWith('保留段')
+  })
+
+  it('批量转换为段落应统一所选块类型', () => {
+    const onChange = vi.fn()
+    render(
+      <BlockMarkdownEditor value={'# 标题\n\n> 引用'} onChange={onChange} />,
+    )
+    const handles = screen.getAllByRole('button', { name: '打开块工具' })
+    fireEvent.click(handles[0], { ctrlKey: true })
+    fireEvent.click(handles[1], { ctrlKey: true })
+
+    fireEvent.click(screen.getByRole('button', { name: '批量转换为段落' }))
+
+    expect(onChange).toHaveBeenLastCalledWith('标题\n\n引用')
+  })
+
+  it('批量文字样式应包裹所选块内全文', () => {
+    const onChange = vi.fn()
+    render(
+      <BlockMarkdownEditor value={'第一段\n\n第二段'} onChange={onChange} />,
+    )
+    const handles = screen.getAllByRole('button', { name: '打开块工具' })
+    fireEvent.click(handles[0], { ctrlKey: true })
+    fireEvent.click(handles[1], { ctrlKey: true })
+
+    fireEvent.click(screen.getByRole('button', { name: '批量加粗' }))
+
+    expect(onChange).toHaveBeenLastCalledWith('**第一段**\n\n**第二段**')
   })
 
   it('文档只有一个空段落时块工具应禁止删除', () => {

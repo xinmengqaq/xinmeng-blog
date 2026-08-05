@@ -1,6 +1,7 @@
 import { memo, type KeyboardEvent } from 'react'
 
 import type { HeadingBlock as HeadingBlockType } from '../types'
+import { preserveEditorCaretAfterUpdate } from '../utils/dom'
 
 type HeadingBlockProps = {
   block: HeadingBlockType
@@ -22,9 +23,12 @@ const HeadingBlockComponent = ({
       className={`block-editor__heading block-editor__heading--${block.level} block-editor__editable`}
       contentEditable={!readOnly}
       data-editor-input
-      onInput={(event) =>
-        onChange({ ...block, html: event.currentTarget.innerHTML })
-      }
+      onInput={(event) => {
+        const editable = event.currentTarget
+        preserveEditorCaretAfterUpdate(editable, () =>
+          onChange({ ...block, html: editable.innerHTML }),
+        )
+      }}
       onKeyDown={onKeyDown}
       suppressContentEditableWarning
       dangerouslySetInnerHTML={{ __html: block.html }}

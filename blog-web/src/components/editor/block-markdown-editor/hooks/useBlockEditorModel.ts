@@ -10,6 +10,12 @@ import {
   removeBlock,
   updateBlock,
 } from '../core/commands'
+import {
+  convertSelectedBlocksToParagraph,
+  formatSelectedBlocks,
+  removeSelectedBlocks,
+  type BulkInlineFormat,
+} from '../core/bulkCommands'
 import { createParagraphBlock, isBlockEmpty } from '../core/blockModel'
 import {
   createHistory,
@@ -31,6 +37,8 @@ export const useBlockEditorModel = (
   const [insertAfterId, setInsertAfterId] = useState<string | null>(null)
   const [toolbarBlockId, setToolbarBlockId] = useState<string | null>(null)
   const [shortcutDrawerOpen, setShortcutDrawerOpen] = useState(false)
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([])
+  const selectionAnchorRef = useRef<string | null>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const blocksRef = useRef(blocks)
   const historyRef = useRef(createHistory(blocks))
@@ -54,6 +62,9 @@ export const useBlockEditorModel = (
     const markdown = serializeBlocksToMarkdown(next)
     lastEmittedValue.current = markdown
     onChangeRef.current(markdown)
+    setSelectedBlockIds((current) =>
+      current.filter((blockId) => next.some((block) => block.id === blockId)),
+    )
   }, [])
 
   const commit = useCallback(
@@ -92,6 +103,60 @@ export const useBlockEditorModel = (
     (block: EditorBlock) =>
       commit(updateBlock(blocksRef.current, block.id, block)),
     [commit],
+  )
+
+  const selectBlock = useCallback(
+    (blockId: string, mode: 'toggle' | 'range') => {
+      const ids = blocksRef.current.map((block) => block.id)
+      if (mode === 'range') {
+        const anchor = selectionAnchorRef.current ?? blockId
+        const start = ids.indexOf(anchor)
+        const end = ids.indexOf(blockId)
+        if (start < 0 || end < 0) return
+        const [from, to] = start < end ? [start, end] : [end, start]
+        setSelectedBlockIds(ids.slice(from, to + 1))
+        return
+      }
+      setSelectedBlockIds((current) =>
+        current.includes(blockId)
+          ? current.filter((id) => id !== blockId)
+          : [...current, blockId],
+      )
+      selectionAnchorRef.current = blockId
+    },
+    [],
+  )
+
+  const clearBlockSelection = useCallback(() => {
+    selectionAnchorRef.current = null
+    setSelectedBlockIds([])
+  }, [])
+
+  const deleteSelectedBlocks = useCallback(() => {
+    const selected = selectedBlockIds
+    if (!selected.length) return
+    const current = blocksRef.current
+    const firstIndex = current.findIndex((block) => selected.includes(block.id))
+    const next = removeSelectedBlocks(current, selected)
+    const focusId = next[Math.min(firstIndex, next.length - 1)]?.id
+    commit(next)
+    clearBlockSelection()
+    if (focusId) focusBlock(focusId)
+  }, [clearBlockSelection, commit, focusBlock, selectedBlockIds])
+
+  const convertSelectedToParagraph = useCallback(() => {
+    if (!selectedBlockIds.length) return
+    commit(
+      convertSelectedBlocksToParagraph(blocksRef.current, selectedBlockIds),
+    )
+  }, [commit, selectedBlockIds])
+
+  const formatSelected = useCallback(
+    (tag: BulkInlineFormat) => {
+      if (!selectedBlockIds.length) return
+      commit(formatSelectedBlocks(blocksRef.current, selectedBlockIds, tag))
+    },
+    [commit, selectedBlockIds],
   )
 
   const insertBlock = useCallback(
@@ -239,6 +304,12 @@ export const useBlockEditorModel = (
     setToolbarBlockId,
     shortcutDrawerOpen,
     setShortcutDrawerOpen,
+    selectedBlockIds,
+    selectBlock,
+    clearBlockSelection,
+    deleteSelectedBlocks,
+    convertSelectedToParagraph,
+    formatSelected,
     commit,
     applyHistory,
     focusBlock,

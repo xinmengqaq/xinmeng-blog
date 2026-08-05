@@ -166,6 +166,43 @@ const pointAtOffset = (editable: HTMLElement, offset: number) => {
   return { node: editable, offset: editable.childNodes.length }
 }
 
+const pendingCaretFrames = new WeakMap<HTMLElement, number>()
+
+export const preserveEditorCaretAfterUpdate = (
+  editable: HTMLElement,
+  update: () => void,
+) => {
+  const selection = window.getSelection()
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null
+  const canRestore =
+    selection?.isCollapsed && range && editable.contains(range.startContainer)
+  let offset = 0
+  if (canRestore) {
+    const before = range.cloneRange()
+    before.selectNodeContents(editable)
+    before.setEnd(range.startContainer, range.startOffset)
+    offset = before.toString().length
+  }
+
+  update()
+  if (!canRestore) return
+
+  const pendingFrame = pendingCaretFrames.get(editable)
+  if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame)
+  const frame = requestAnimationFrame(() => {
+    pendingCaretFrames.delete(editable)
+    if (!editable.isConnected || document.activeElement !== editable) return
+    const point = pointAtOffset(editable, offset)
+    const nextRange = document.createRange()
+    nextRange.setStart(point.node, point.offset)
+    nextRange.collapse(true)
+    const nextSelection = window.getSelection()
+    nextSelection?.removeAllRanges()
+    nextSelection?.addRange(nextRange)
+  })
+  pendingCaretFrames.set(editable, frame)
+}
+
 export const resolveEditorSelection = (
   selection: EditorSelection,
 ): EditorSelection => {

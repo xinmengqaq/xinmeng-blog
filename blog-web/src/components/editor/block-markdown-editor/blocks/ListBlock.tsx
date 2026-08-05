@@ -5,7 +5,10 @@ import {
   insertListItemAfter,
   splitListItem,
 } from '../core/commands'
-import { splitEditorAtCaret } from '../utils/dom'
+import {
+  preserveEditorCaretAfterUpdate,
+  splitEditorAtCaret,
+} from '../utils/dom'
 import type { ListBlock as ListBlockType } from '../types'
 import { getListKeyboardAction } from '../utils/keyboard'
 
@@ -72,16 +75,19 @@ const ListBlockComponent = ({
             className="block-editor__editable"
             contentEditable={!readOnly}
             data-editor-input
-            onInput={(event) =>
-              onChange({
-                ...block,
-                items: block.items.map((current) =>
-                  current.id === item.id
-                    ? { ...current, html: event.currentTarget.innerHTML }
-                    : current,
-                ),
-              })
-            }
+            onInput={(event) => {
+              const editable = event.currentTarget
+              preserveEditorCaretAfterUpdate(editable, () =>
+                onChange({
+                  ...block,
+                  items: block.items.map((current) =>
+                    current.id === item.id
+                      ? { ...current, html: editable.innerHTML }
+                      : current,
+                  ),
+                }),
+              )
+            }}
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) {
                 onKeyDown(event)
