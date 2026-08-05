@@ -17,7 +17,6 @@ export type HomeIntroNodes = {
   welcome: HTMLParagraphElement
   message: HTMLButtonElement
   clock: HTMLDivElement
-  media: HTMLDivElement
   titleParticles: HTMLSpanElement[]
 }
 
@@ -29,7 +28,6 @@ const allNodes = (nodes: HomeIntroNodes) => [
   nodes.welcome,
   nodes.message,
   nodes.clock,
-  nodes.media,
   ...nodes.titleParticles,
 ]
 
@@ -61,12 +59,6 @@ export const playHomeIntro = (nodes: HomeIntroNodes) => {
     autoAlpha: 0,
     y: 9,
   })
-  gsap.set(nodes.media, {
-    autoAlpha: 0,
-    scale: 1.04,
-    transformOrigin: 'center center',
-    willChange: 'transform, opacity',
-  })
   gsap.set(nodes.titleParticles, {
     autoAlpha: 0,
     x: 0,
@@ -85,19 +77,9 @@ export const playHomeIntro = (nodes: HomeIntroNodes) => {
 
   timeline
     .addLabel('brandReveal', 0)
-    .addLabel('sceneReveal', 0)
     .addLabel('welcomeReveal', 0.68)
     .addLabel('statusReveal', 0.98)
     .addLabel('clockReveal', 1.23)
-    .to(
-      nodes.media,
-      {
-        autoAlpha: 1,
-        scale: 1,
-        duration: 0.72,
-      },
-      'sceneReveal',
-    )
     .to(
       nodes.rail,
       { autoAlpha: 0.74, scaleX: 1, duration: 0.34 },

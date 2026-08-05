@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { FrontHeader } from '@/components/front/layout/FrontHeader'
+import { FrontFooter } from '@/components/front/layout/FrontFooter'
 import { FrontPageScrollbar } from '@/components/front/layout/FrontPageScrollbar'
+import { FrontLive2DWidget } from '@/components/front/live2d'
 import { FrontAtmosphere } from '@/components/front/atmosphere/FrontAtmosphere'
 import { PageMotion } from '@/components/front/atmosphere/PageMotion'
 import { PageTransition } from '@/components/front/atmosphere/PageTransition'
@@ -46,8 +48,10 @@ export const FrontLayout = () => {
           <Outlet />
         </PageMotion>
       </main>
+      <FrontFooter />
       <FrontAtmosphere />
       <FrontPageScrollbar />
+      <FrontLive2DWidget />
     </div>
   )
 }

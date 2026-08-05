@@ -209,7 +209,7 @@ export const ArticleDetailView = () => {
               <div className="detail-kicker">
                 <span className="detail-category">
                   <FrontIcon name="category" size={16} />
-                  {data.categoryName || '沿途随笔'}
+                  {data.categoryName || '随笔'}
                 </span>
                 <FrontArticleBadges
                   isTop={data.isTop}

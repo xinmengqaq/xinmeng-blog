@@ -1,7 +1,7 @@
 export const frontSite = {
   name: '薪梦集',
-  welcome: '在文字与风景之间，记录缓慢抵达的日常',
-  stationFallback: '站点头图',
+  welcome: '在文字与风景之间，记录真实而细碎的日常',
+  stationFallback: '页面头图',
   stationLines: [
     // 《轻音少女》
     '但是呢，遇见了！',

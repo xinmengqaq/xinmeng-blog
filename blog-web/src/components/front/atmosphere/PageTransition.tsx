@@ -131,7 +131,7 @@ export const PageTransition = () => {
           ))}
           <img src={frontBrandAssets.simplifiedMark} alt="" draggable={false} />
         </div>
-        <span className="front-page-transition__label">正在抵达</span>
+        <span className="front-page-transition__label">正在加载</span>
       </div>
     </div>
   )

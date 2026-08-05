@@ -140,7 +140,9 @@ const renderRichNode = (node: Node, children: ReactNode[], key: string) => {
         />
       )
     case 'code':
-      return <CodeBlock key={key} code={node.value ?? ''} />
+      return (
+        <CodeBlock key={key} code={node.value ?? ''} language={node.lang} />
+      )
     case 'thematicBreak':
       return <hr key={key} />
     case 'table':

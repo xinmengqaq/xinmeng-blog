@@ -1,4 +1,7 @@
-import axios, { type AxiosRequestConfig } from 'axios'
+import axios, {
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
+} from 'axios'
 
 import type { ApiError, ApiResult } from '@/types/api'
 import { useAuthStore } from '@/store/auth'
@@ -42,11 +45,11 @@ export const isApiError = (error: unknown): error is ApiError => {
   )
 }
 
-const requestInterceptor = (config: AxiosRequestConfig) => {
+const requestInterceptor = (config: InternalAxiosRequestConfig) => {
   const token = useAuthStore.getState().token
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.set('Authorization', `Bearer ${token}`)
   }
 
   return config

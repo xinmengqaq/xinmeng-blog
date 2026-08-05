@@ -98,7 +98,9 @@ const safe = true
       'id',
       '安全目录',
     )
-    expect(screen.getByText('const safe = true')).toBeInTheDocument()
+    expect(
+      container.querySelector('code.language-typescript'),
+    ).toHaveTextContent('const safe = true')
     expect(screen.getByRole('button', { name: '复制代码' })).toBeInTheDocument()
   })
 })

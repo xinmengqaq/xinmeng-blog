@@ -34,7 +34,9 @@ const FeaturedSection = ({
               <div className="home-featured__anchor-heading">
                 <h3>{lead.title}</h3>
               </div>
-              <p>{lead.summary || '沿着春天的铁轨，读一段慢慢抵达的文字。'}</p>
+              <p>
+                {lead.summary || '在文字与风景之间，读一段认真写下的日常。'}
+              </p>
               <FrontArticleMeta {...lead} showCategory={false} />
             </div>
           </Link>
@@ -70,7 +72,7 @@ const FeaturedSection = ({
 const LatestSection = ({ articles }: { articles: PublicArticleListItem[] }) => (
   <section className="home-latest" aria-labelledby="home-latest-title">
     <h2 className="front-section-title" id="home-latest-title">
-      最近抵达
+      最新文章
     </h2>
     <div className="home-latest__list">
       {articles.map((article, index) => (
@@ -84,7 +86,7 @@ const LatestSection = ({ articles }: { articles: PublicArticleListItem[] }) => (
           </div>
           <div className="home-latest__copy">
             <h3>{article.title}</h3>
-            <p>{article.summary || '把沿途的风景写下来，留给下一站的自己。'}</p>
+            <p>{article.summary || '把日常里的所见所想，认真写进这一篇。'}</p>
             <FrontArticleMeta {...article} showCategory={false} />
           </div>
         </Link>
@@ -156,7 +158,7 @@ export const HomeView = () => {
           <div className="home-state">
             <FrontState
               variant="error"
-              title="站台暂时没有回应"
+              title="页面暂时无法加载"
               description="暂时无法读取公开文章，请稍后重试。"
               onAction={() => void home.refetch()}
             />
@@ -166,8 +168,8 @@ export const HomeView = () => {
           <div className="home-state">
             <FrontState
               variant="empty"
-              title="今天还没有文章抵达"
-              description="等一等，新的文字会沿着轨道过来。"
+              title="今天还没有新文章"
+              description="新的文字还在酝酿，过一会儿再来看看吧。"
             />
           </div>
         ) : null}

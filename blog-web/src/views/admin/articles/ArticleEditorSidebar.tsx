@@ -3,6 +3,7 @@ import { Save, Trash2 } from 'lucide-react'
 import { Button, FormField, Input } from '@/components/ui'
 
 import { ArticleCoverEditor } from './ArticleCoverEditor'
+import { ArticleMarkdownImportControl } from './ArticleMarkdownImportControl'
 import type { ArticleForm, ArticleFormErrors } from './articleEditorForm'
 import { ArticlePublishFields } from './ArticlePublishFields'
 import { ArticleTaxonomyFields } from './ArticleTaxonomyFields'
@@ -42,6 +43,11 @@ export const ArticleEditorSidebar = ({
         <h2>文章信息</h2>
         <p>设置标题、摘要和封面。</p>
       </header>
+      <ArticleMarkdownImportControl
+        currentContent={form.content}
+        disabled={saving}
+        onImport={(content) => onUpdate('content', content)}
+      />
       <FormField
         required
         error={errors.title}

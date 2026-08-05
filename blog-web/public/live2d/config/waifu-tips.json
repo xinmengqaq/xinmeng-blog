@@ -1,0 +1,28 @@
+{
+  "mouseover": [],
+  "click": [],
+  "seasons": [],
+  "time": [],
+  "message": {
+    "default": ["要一起看看今天的文章吗？"],
+    "console": "你在找什么呢？",
+    "copy": "引用内容时记得保留出处。",
+    "visibilitychange": "欢迎回来。",
+    "changeSuccess": "已经换好了。",
+    "changeFail": "暂时没有其他装扮。",
+    "photo": "照片准备好了。",
+    "goodbye": "下次见。",
+    "hitokoto": "这句一言来自《$1》，由 $2 投稿。",
+    "welcome": "欢迎阅读《$1》。",
+    "referrer": "欢迎来自 $1 的朋友。",
+    "hoverBody": "别戳我啦。",
+    "tapBody": "我在这里。"
+  },
+  "models": [
+    {
+      "name": "艾玛",
+      "paths": ["/live2d/models/emma/艾玛.model3.json"],
+      "message": "艾玛"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #8d9a91;
+}
+
+.token.punctuation {
+  color: #d7d4ce;
+}
+
+.token.namespace {
+  opacity: 0.8;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #ff8c8c;
+}
+
+.token.boolean,
+.token.number {
+  color: #e7b276;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #9bd49b;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #8cc9dc;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #d6a6e8;
+}
+
+.token.function,
+.token.class-name {
+  color: #f0cf78;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #efaa83;
+}
+
+.token.important,
+.token.bold {
+  font-weight: 700;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+.reading-code .token.comment,
+.reading-code .token.prolog,
+.reading-code .token.doctype,
+.reading-code .token.cdata {
+  color: #66736b;
+}
+
+.reading-code .token.punctuation {
+  color: #53616d;
+}
+
+.reading-code .token.property,
+.reading-code .token.tag,
+.reading-code .token.constant,
+.reading-code .token.symbol,
+.reading-code .token.deleted {
+  color: #a64048;
+}
+
+.reading-code .token.boolean,
+.reading-code .token.number {
+  color: #9b5a22;
+}
+
+.reading-code .token.selector,
+.reading-code .token.attr-name,
+.reading-code .token.string,
+.reading-code .token.char,
+.reading-code .token.builtin,
+.reading-code .token.inserted {
+  color: #35724c;
+}
+
+.reading-code .token.operator,
+.reading-code .token.entity,
+.reading-code .token.url,
+.reading-code .language-css .token.string,
+.reading-code .style .token.string {
+  color: #236f84;
+}
+
+.reading-code .token.atrule,
+.reading-code .token.attr-value,
+.reading-code .token.keyword {
+  color: #714d9b;
+}
+
+.reading-code .token.function,
+.reading-code .token.class-name {
+  color: #805f13;
+}
+
+.reading-code .token.regex,
+.reading-code .token.important,
+.reading-code .token.variable {
+  color: #9f4f2e;
+}

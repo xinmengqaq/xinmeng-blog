@@ -2,8 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 
 import { FrontAssetImage, FrontIcon } from '@/components/front/visual'
 import { copyText } from '@/utils/clipboard'
+import { highlightCode, normalizeCodeLanguage } from '@/utils/syntaxHighlight'
 
-export const CodeBlock = ({ code }: { code: string }) => {
+export const CodeBlock = ({
+  code,
+  language,
+}: {
+  code: string
+  language?: string | null
+}) => {
   const [copied, setCopied] = useState(false)
   const resetTimer = useRef<number | null>(null)
 
@@ -24,10 +31,17 @@ export const CodeBlock = ({ code }: { code: string }) => {
       setCopied(false)
     }
   }
+  const normalizedLanguage = normalizeCodeLanguage(language)
+
   return (
     <div className="reading-code">
       <pre>
-        <code>{code}</code>
+        <code
+          className={
+            normalizedLanguage ? `language-${normalizedLanguage}` : undefined
+          }
+          dangerouslySetInnerHTML={{ __html: highlightCode(code, language) }}
+        />
       </pre>
       <button
         type="button"

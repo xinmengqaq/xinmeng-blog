@@ -16,7 +16,6 @@
   aspect-ratio: 16 / 10;
   overflow: hidden;
   border-radius: 6px;
-  background: #e7e7e5;
 }
 
 .home-featured__anchor-copy {
@@ -92,7 +91,6 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: 0;
-  background: #e7e7e5;
 }
 
 .home-featured__index-copy {
@@ -173,6 +171,22 @@
 }
 
 @media (max-width: 767px) {
+  .front-motion-is-enabled
+    .home-featured
+    :where(
+      .home-featured__anchor,
+      .home-featured__anchor-media,
+      .home-featured__anchor-copy,
+      .home-featured__index-item,
+      .home-featured__index-media,
+      .home-featured__index-copy
+    ) {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
   .home-featured__canvas {
     gap: 28px;
   }
@@ -210,6 +224,7 @@
   .home-featured__index-copy {
     width: min(86%, 300px);
     min-width: 0;
+    translate: -50% 0 !important;
   }
 }
 

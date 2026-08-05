@@ -316,4 +316,10 @@
     transition: none;
     transform: none;
   }
+
+  .station-hero .front-scene-banner__media > .front-site-background.is-ready {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
 }

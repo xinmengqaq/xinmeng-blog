@@ -7,6 +7,7 @@ import { router } from '@/router'
 import '@/styles/reset.css'
 import '@/styles/variables.css'
 import '@/styles/global.css'
+import '@/styles/syntax-highlight.css'
 
 const queryClient = new QueryClient()
 

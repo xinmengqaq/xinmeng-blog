@@ -31,7 +31,6 @@ export const HomeStationHero = () => {
   const welcomeRef = useRef<HTMLParagraphElement>(null)
   const messageRef = useRef<HTMLButtonElement>(null)
   const clockRef = useRef<HTMLDivElement>(null)
-  const mediaRef = useRef<HTMLDivElement>(null)
   const titleParticleRefs = useRef<Array<HTMLSpanElement | null>>([])
   const [line, setLine] = useState(0)
   const [now, setNow] = useState(() => new Date())
@@ -44,7 +43,7 @@ export const HomeStationHero = () => {
 
   const greeting =
     now.getHours() < 12
-      ? '晨光初醒，春风在途'
+      ? '晨光初醒，愿你今日从容'
       : now.getHours() < 18
         ? '午后风轻，云影缓行'
         : '夜色渐深，灯火可亲'
@@ -65,7 +64,6 @@ export const HomeStationHero = () => {
         welcome: welcomeRef.current,
         message: messageRef.current,
         clock: clockRef.current,
-        media: mediaRef.current,
         titleParticles: titleParticleRefs.current.filter(
           (particle): particle is HTMLSpanElement => particle !== null,
         ),
@@ -96,7 +94,6 @@ export const HomeStationHero = () => {
     <FrontSceneBanner
       className="station-hero"
       media={<FrontSiteBackground />}
-      mediaRef={mediaRef}
       stationLabel={frontSite.stationFallback}
       rootRef={rootRef}
     >
@@ -141,7 +138,7 @@ export const HomeStationHero = () => {
             ref={messageRef}
             className="station-message"
             type="button"
-            aria-label={`站台短句：${stationLine}。点击换一句`}
+            aria-label={`每日短句：${stationLine}。点击换一句`}
             onClick={() =>
               setLine((value) => (value + 1) % frontSite.stationLines.length)
             }

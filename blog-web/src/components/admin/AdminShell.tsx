@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 import { useAuthStore } from '@/store/auth'
 
@@ -12,6 +12,15 @@ type AdminShellProps = {
 
 export const AdminShell = ({ children }: AdminShellProps) => {
   const currentUser = useAuthStore((state) => state.currentUser)
+
+  useEffect(() => {
+    document.documentElement.classList.add('admin-shell-active')
+    document.body.classList.add('admin-shell-active')
+    return () => {
+      document.documentElement.classList.remove('admin-shell-active')
+      document.body.classList.remove('admin-shell-active')
+    }
+  }, [])
 
   return (
     <div className="admin-shell">

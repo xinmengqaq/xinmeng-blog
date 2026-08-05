@@ -79,7 +79,7 @@ export const ArticleListView = () => {
         stationLabel={frontSite.stationFallback}
       >
         <div className="front-container">
-          <p>沿着时间的轨道，寻找想读的那一篇</p>
+          <p>按时间翻阅，找到想读的那一篇</p>
           <h1>文章</h1>
         </div>
       </FrontSceneBanner>
@@ -199,11 +199,11 @@ export const ArticleListView = () => {
           </button>
         </div>
         <section className="article-results" aria-live="polite">
-          {articles.isLoading ? <LoadingState title="文章正在抵达" /> : null}
+          {articles.isLoading ? <LoadingState title="正在加载文章" /> : null}
           {articles.isError ? (
             <FrontState
               variant="error"
-              title="文章暂时无法抵达"
+              title="文章暂时无法加载"
               description="公开文章列表读取失败，请稍后重试。"
               onAction={() => void articles.refetch()}
             />

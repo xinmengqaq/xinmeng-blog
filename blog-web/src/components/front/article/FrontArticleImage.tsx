@@ -1,10 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useState, type ImgHTMLAttributes } from 'react'
 
-type Props = { src?: string | null; alt: string; className?: string }
+type Props = {
+  src?: string | null
+  alt: string
+  className?: string
+  loading?: ImgHTMLAttributes<HTMLImageElement>['loading']
+  decoding?: ImgHTMLAttributes<HTMLImageElement>['decoding']
+  fetchPriority?: ImgHTMLAttributes<HTMLImageElement>['fetchPriority']
+  onReady?: (result: 'loaded' | 'failed') => void
+}
 
-export const FrontArticleImage = ({ src, alt, className = '' }: Props) => {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => setFailed(false), [src])
+export const FrontArticleImage = ({
+  src,
+  alt,
+  className = '',
+  loading,
+  decoding,
+  fetchPriority,
+  onReady,
+}: Props) => {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const failed = src != null && failedSrc === src
+
   if (!src || failed) {
     const placeholderLabel = alt ? `${alt}图片占位` : undefined
 
@@ -21,7 +38,14 @@ export const FrontArticleImage = ({ src, alt, className = '' }: Props) => {
       className={`front-image ${className}`}
       src={src}
       alt={alt}
-      onError={() => setFailed(true)}
+      loading={loading}
+      decoding={decoding}
+      fetchPriority={fetchPriority}
+      onLoad={() => onReady?.('loaded')}
+      onError={() => {
+        setFailedSrc(src)
+        onReady?.('failed')
+      }}
     />
   )
 }

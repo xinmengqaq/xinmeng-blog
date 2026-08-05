@@ -1,3 +1,9 @@
+html.admin-shell-active,
+body.admin-shell-active {
+  height: 100%;
+  overflow: hidden;
+}
+
 .admin-shell {
   background: var(--color-bg);
   display: grid;
