@@ -31,6 +31,7 @@ export const SelectedImageToolbar = ({
       disabled={disabled}
       draft={imageUpload.getDraft(block.url)}
       preparingCrop={imageUpload.preparingCrop}
+      onAlignChange={(align) => model.replaceBlock({ ...block, align })}
       onAltChange={(alt) => model.replaceBlock({ ...block, alt })}
       onClose={onClose}
       onRecrop={() => void imageUpload.recrop(block)}

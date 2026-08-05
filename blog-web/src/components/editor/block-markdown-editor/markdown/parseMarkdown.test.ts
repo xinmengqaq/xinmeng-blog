@@ -57,4 +57,17 @@ const value = 1
       rows: [[{ html: '内容', rowspan: 2, colspan: 1, align: 'center' }]],
     })
   })
+
+  it('带排版设置的 HTML 图片应解析为对应图片块', () => {
+    const [image] = parseMarkdownToBlocks(
+      '<p style="color:red;text-align:center" onclick="bad()"><img src="https://example.com/a.png" alt="封面" onerror="bad()"></p>',
+    )
+
+    expect(image).toMatchObject({
+      type: 'image',
+      url: 'https://example.com/a.png',
+      alt: '封面',
+      align: 'center',
+    })
+  })
 })

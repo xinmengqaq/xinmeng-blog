@@ -1,5 +1,6 @@
 import type { EditorBlock, TableBlock, TextAlign } from '../types'
 import { getTableDimensions } from '../core/commands'
+import { serializeAlignedImageHtml } from './imageHtml'
 import { sanitizeEditorHtml } from './sanitizeHtml'
 
 const escapeMarkdownText = (value: string) => value.replaceAll('|', '\\|')
@@ -138,7 +139,12 @@ const serializeBlock = (block: EditorBlock) => {
     case 'code':
       return `\`\`\`${block.language ?? ''}\n${block.code}\n\`\`\``
     case 'image':
-      return `![${block.alt ?? ''}](${block.url})`
+      if (block.align === 'left') return `![${block.alt ?? ''}](${block.url})`
+      return serializeAlignedImageHtml({
+        url: block.url,
+        alt: block.alt ?? '',
+        align: block.align,
+      })
     case 'table':
       return isSimpleTable(block)
         ? serializeGfmTable(block)

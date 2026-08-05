@@ -5,12 +5,20 @@ import {
   shift,
   useFloating,
 } from '@floating-ui/react-dom'
-import { Crop, ImageUp, Trash2 } from 'lucide-react'
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Crop,
+  ImageUp,
+  Trash2,
+} from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import type { ImageDraft } from '@/types/file'
 
 import type { ImageBlock } from '../types'
+import type { TextAlign } from '../types'
 
 type ImageToolbarProps = {
   anchor: HTMLElement
@@ -19,6 +27,7 @@ type ImageToolbarProps = {
   draft?: ImageDraft
   preparingCrop: boolean
   onAltChange: (alt: string) => void
+  onAlignChange: (align: TextAlign) => void
   onClose: () => void
   onRecrop: () => void
   onRemove: () => void
@@ -32,6 +41,7 @@ export const ImageToolbar = ({
   draft,
   preparingCrop,
   onAltChange,
+  onAlignChange,
   onClose,
   onRecrop,
   onRemove,
@@ -93,6 +103,25 @@ export const ImageToolbar = ({
         />
       </label>
       <div className="block-editor__toolbar-group">
+        {(
+          [
+            ['left', '图片左对齐', AlignLeft],
+            ['center', '图片居中对齐', AlignCenter],
+            ['right', '图片右对齐', AlignRight],
+          ] as const
+        ).map(([align, label, Icon]) => (
+          <button
+            key={align}
+            aria-label={label}
+            aria-pressed={block.align === align}
+            disabled={disabled}
+            title={label}
+            type="button"
+            onClick={() => onAlignChange(align)}
+          >
+            <Icon aria-hidden="true" />
+          </button>
+        ))}
         <button
           aria-label="更换图片"
           disabled={disabled}

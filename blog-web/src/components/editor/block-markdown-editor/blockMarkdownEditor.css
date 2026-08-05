@@ -609,7 +609,9 @@
 
 .block-editor__image img {
   display: block;
+  max-width: 100%;
   object-fit: contain;
+  width: auto;
 }
 
 .block-editor__image-placeholder {

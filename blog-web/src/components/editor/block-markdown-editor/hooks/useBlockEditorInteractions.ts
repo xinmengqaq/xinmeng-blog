@@ -263,7 +263,7 @@ export const useBlockEditorInteractions = (
     const blockId =
       target.closest<HTMLElement>('[data-block-id]')?.dataset.blockId
     if (!blockId) return
-    if (!target.closest<HTMLElement>('[data-editor-input]')) return
+    if (!editorInput) return
     if (
       event.key === 'Backspace' &&
       !modifier &&
@@ -278,7 +278,7 @@ export const useBlockEditorInteractions = (
       const caretInsideInput =
         selection?.isCollapsed &&
         range &&
-        editorInput?.contains(range.startContainer)
+        editorInput.contains(range.startContainer)
       const isEmptyTextBlock =
         block &&
         (block.type === 'paragraph' ||

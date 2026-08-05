@@ -1,63 +1,20 @@
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
-import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useRef } from 'react'
 
 import { frontBrandAssets } from '@/components/front/visual/frontAssets'
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
-import { useCurrentPublicPageWaiting } from '@/hooks/front/pageTransition'
 import './PageTransition.css'
 
 gsap.registerPlugin(useGSAP)
 
-const MINIMUM_VISIBLE_MS = 450
+type PageTransitionProps = {
+  active: boolean
+}
 
-export const PageTransition = () => {
-  const { pathname } = useLocation()
-  const pageWaiting = useCurrentPublicPageWaiting()
+export const PageTransition = ({ active }: PageTransitionProps) => {
   const { motionAllowed } = useFrontMotionPreference()
   const rootRef = useRef<HTMLDivElement>(null)
-  const visibleSinceRef = useRef<number | null>(null)
-  const suppressInitialHomeTransitionRef = useRef(pathname === '/')
-  const waiting =
-    pageWaiting &&
-    !(suppressInitialHomeTransitionRef.current && pathname === '/')
-  const [visible, setVisible] = useState(waiting)
-  const active = waiting || visible
-
-  useEffect(() => {
-    if (pathname !== '/') suppressInitialHomeTransitionRef.current = false
-  }, [pathname])
-
-  useEffect(() => {
-    if (waiting) {
-      visibleSinceRef.current ??= performance.now()
-      setVisible(true)
-      return
-    }
-
-    if (visibleSinceRef.current === null) {
-      setVisible(false)
-      return
-    }
-
-    const remaining = Math.max(
-      0,
-      MINIMUM_VISIBLE_MS - (performance.now() - visibleSinceRef.current),
-    )
-    const finish = () => {
-      visibleSinceRef.current = null
-      setVisible(false)
-    }
-
-    if (remaining === 0) {
-      finish()
-      return
-    }
-
-    const timer = window.setTimeout(finish, remaining)
-    return () => window.clearTimeout(timer)
-  }, [waiting])
 
   useGSAP(
     () => {

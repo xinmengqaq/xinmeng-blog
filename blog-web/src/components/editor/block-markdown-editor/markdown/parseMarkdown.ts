@@ -15,6 +15,7 @@ import {
   createParagraphBlock,
   ensureNonEmptyDocument,
 } from '../core/blockModel'
+import { parseAlignedImageHtml } from './imageHtml'
 import { sanitizeEditorHtml } from './sanitizeHtml'
 
 type MarkdownNode = {
@@ -191,6 +192,7 @@ const nodeToBlocks = (node: MarkdownNode): EditorBlock[] => {
             type: 'image',
             url: node.children[0].url ?? '',
             alt: node.children[0].alt ?? '',
+            align: 'left',
           },
         ]
       }
@@ -264,8 +266,10 @@ const nodeToBlocks = (node: MarkdownNode): EditorBlock[] => {
       ]
     case 'html': {
       const table = tableFromHtml(node.value ?? '')
-      return table
-        ? [table]
+      if (table) return [table]
+      const image = parseAlignedImageHtml(node.value ?? '')
+      return image
+        ? [{ id: createBlockId(), type: 'image', ...image }]
         : [createParagraphBlock(sanitizeEditorHtml(node.value ?? ''))]
     }
     default:

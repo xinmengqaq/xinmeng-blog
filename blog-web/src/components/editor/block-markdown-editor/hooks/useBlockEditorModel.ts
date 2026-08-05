@@ -40,6 +40,7 @@ export const useBlockEditorModel = (
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([])
   const selectionAnchorRef = useRef<string | null>(null)
   const editorRef = useRef<HTMLDivElement>(null)
+  const lastFocusedBlockIdRef = useRef<string | null>(null)
   const blocksRef = useRef(blocks)
   const historyRef = useRef(createHistory(blocks))
   const focusedRef = useRef(false)
@@ -297,6 +298,7 @@ export const useBlockEditorModel = (
     blocks,
     blocksRef,
     editorRef,
+    lastFocusedBlockIdRef,
     focusedRef,
     insertAfterId,
     setInsertAfterId,

@@ -1,14 +1,7 @@
 import { ImageUp, Keyboard, Plus } from 'lucide-react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 
-import { CodeBlock } from './blocks/CodeBlock'
-import { DividerBlock } from './blocks/DividerBlock'
-import { HeadingBlock } from './blocks/HeadingBlock'
-import { ImageBlock } from './blocks/ImageBlock'
-import { ListBlock } from './blocks/ListBlock'
-import { ParagraphBlock } from './blocks/ParagraphBlock'
-import { QuoteBlock } from './blocks/QuoteBlock'
-import { TableBlock } from './blocks/TableBlock'
+import { EditorBlockContent } from './EditorBlockContent'
 import {
   clearSelectionFormatting,
   removeSelectionLink,
@@ -53,95 +46,25 @@ export const BlockEditorSurface = ({
 }: BlockEditorSurfaceProps) => {
   const selectedImage = useSelectedEditorImage(model)
 
+  const openImageAtCaret = () => {
+    const active = document.activeElement
+    const block =
+      active instanceof HTMLElement
+        ? active.closest<HTMLElement>('[data-block-id]')
+        : null
+    imageUpload.openInsert(
+      block?.dataset.blockId ??
+        model.lastFocusedBlockIdRef.current ??
+        undefined,
+    )
+  }
+
   const deleteBlock = (block: EditorBlock) => {
     if (block.type === 'image') {
       imageUpload.setRemoveBlock(block)
       return
     }
     model.deleteToolbarBlock(block.id)
-  }
-
-  const renderBlock = (block: EditorBlock) => {
-    const onKeyDown = interactions.blockKeyDown(block)
-    switch (block.type) {
-      case 'paragraph':
-        return (
-          <ParagraphBlock
-            block={block}
-            placeholder={
-              model.blocks[0]?.id === block.id ? placeholder : undefined
-            }
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-            onKeyDown={onKeyDown}
-            onTextChange={(text) => model.convertShortcut(block.id, text)}
-          />
-        )
-      case 'heading':
-        return (
-          <HeadingBlock
-            block={block}
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-            onKeyDown={onKeyDown}
-          />
-        )
-      case 'quote':
-        return (
-          <QuoteBlock
-            block={block}
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-            onKeyDown={onKeyDown}
-          />
-        )
-      case 'unordered-list':
-      case 'ordered-list':
-      case 'task-list':
-        return (
-          <ListBlock
-            block={block}
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-            onExitItem={(itemId) => model.exitListBlockItem(block.id, itemId)}
-            onKeyDown={onKeyDown}
-          />
-        )
-      case 'code':
-        return (
-          <CodeBlock
-            block={block}
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-          />
-        )
-      case 'image':
-        return (
-          <ImageBlock
-            block={block}
-            readOnly={readOnly}
-            selected={selectedImage.selection?.blockId === block.id}
-            onSelect={(anchor) => {
-              model.setInsertAfterId(null)
-              model.setToolbarBlockId(null)
-              interactions.dismissTextToolbar()
-              selectedImage.select(block.id, anchor)
-            }}
-          />
-        )
-      case 'table':
-        return (
-          <TableBlock
-            block={block}
-            readOnly={readOnly}
-            onChange={model.replaceBlock}
-            onDelete={() => model.deleteToolbarBlock(block.id)}
-            onKeyDown={onKeyDown}
-          />
-        )
-      case 'divider':
-        return <DividerBlock />
-    }
   }
 
   const closeShortcutDrawer = () => model.setShortcutDrawerOpen(false)
@@ -174,6 +97,13 @@ export const BlockEditorSurface = ({
       onFocus={() => {
         model.focusedRef.current = true
       }}
+      onFocusCapture={(event) => {
+        const target = event.target as HTMLElement
+        const block = target.closest<HTMLElement>('[data-block-id]')
+        if (block?.dataset.blockId) {
+          model.lastFocusedBlockIdRef.current = block.dataset.blockId
+        }
+      }}
       onContextMenu={onRootContextMenu}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && model.selectedBlockIds.length) {
@@ -205,7 +135,7 @@ export const BlockEditorSurface = ({
             disabled={disabled}
             title="上传图片"
             type="button"
-            onClick={() => imageUpload.openInsert()}
+            onClick={openImageAtCaret}
           >
             <ImageUp aria-hidden="true" />
           </button>
@@ -314,7 +244,22 @@ export const BlockEditorSurface = ({
               </>
             ) : null}
             <div className="block-editor__block-content">
-              {renderBlock(block)}
+              <EditorBlockContent
+                block={block}
+                interactions={interactions}
+                model={model}
+                placeholder={
+                  model.blocks[0]?.id === block.id ? placeholder : undefined
+                }
+                readOnly={readOnly}
+                selectedImageBlockId={selectedImage.selection?.blockId}
+                onSelectImage={(blockId, anchor) => {
+                  model.setInsertAfterId(null)
+                  model.setToolbarBlockId(null)
+                  interactions.dismissTextToolbar()
+                  selectedImage.select(blockId, anchor)
+                }}
+              />
             </div>
             {model.insertAfterId === block.id ? (
               <BlockInsertMenu

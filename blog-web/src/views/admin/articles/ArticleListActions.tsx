@@ -87,7 +87,7 @@ export const ArticleListActions = ({
             ),
         },
         {
-          label: article.isRecommend ? '取消推荐' : '推荐文章',
+          label: article.isRecommend ? '取消精选' : '精选文章',
           icon: article.isRecommend ? <StarOff /> : <Star />,
           onSelect: () =>
             void run(() =>

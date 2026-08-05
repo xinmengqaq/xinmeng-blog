@@ -1,9 +1,18 @@
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { publicContentQueryKeys } from '@/queries/publicContent'
 import { parsePublicArticleFilters } from '@/utils/publicArticleFilters'
+
+const MINIMUM_VISIBLE_MS = 450
 
 const getRouteMainQueryKey = (
   pathname: string,
@@ -52,4 +61,41 @@ export const useCurrentPublicPageWaiting = () => {
   }, [queryClient, queryKey])
 
   return useSyncExternalStore(subscribe, getSnapshot, () => false)
+}
+
+export const usePageTransitionActive = () => {
+  const waiting = useCurrentPublicPageWaiting()
+  const visibleSinceRef = useRef<number | null>(null)
+  const [visible, setVisible] = useState(waiting)
+
+  useEffect(() => {
+    if (waiting) {
+      visibleSinceRef.current ??= performance.now()
+      queueMicrotask(() => setVisible(true))
+      return
+    }
+
+    if (visibleSinceRef.current === null) {
+      queueMicrotask(() => setVisible(false))
+      return
+    }
+
+    const remaining = Math.max(
+      0,
+      MINIMUM_VISIBLE_MS - (performance.now() - visibleSinceRef.current),
+    )
+    const finish = () => {
+      visibleSinceRef.current = null
+      setVisible(false)
+    }
+    if (remaining === 0) {
+      queueMicrotask(finish)
+      return
+    }
+
+    const timer = window.setTimeout(finish, remaining)
+    return () => window.clearTimeout(timer)
+  }, [waiting])
+
+  return waiting || visible
 }

@@ -24,6 +24,7 @@ export const ImageBlock = ({
     <figure
       aria-selected={selected || undefined}
       className="block-editor__image"
+      style={{ textAlign: block.align }}
       tabIndex={readOnly ? undefined : 0}
       onClick={(event) => onSelect?.(event.currentTarget)}
       onFocus={(event) => onSelect?.(event.currentTarget)}

@@ -1,13 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { FrontArticleImage } from '@/components/front/article'
+import { useFrontPageTransitionActive } from '@/hooks/front/pageTransitionContext'
 import { usePublicSiteBackgroundQuery } from '@/queries/siteConfig'
 
 export const FrontSiteBackground = () => {
   const siteBackground = usePublicSiteBackgroundQuery()
+  const pageTransitionActive = useFrontPageTransitionActive()
   const backgroundUrl = siteBackground.data?.backgroundUrl
   const [readyUrl, setReadyUrl] = useState<string | null>(null)
+  const [revealedUrl, setRevealedUrl] = useState<string | null>(null)
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (backgroundUrl && readyUrl === backgroundUrl && !pageTransitionActive) {
+      const frame = requestAnimationFrame(() => setRevealedUrl(backgroundUrl))
+      return () => cancelAnimationFrame(frame)
+    }
+  }, [backgroundUrl, pageTransitionActive, readyUrl])
 
   if (siteBackground.isError) {
     return (
@@ -29,7 +39,7 @@ export const FrontSiteBackground = () => {
     )
   }
 
-  const ready = readyUrl === backgroundUrl
+  const ready = revealedUrl === backgroundUrl
   const failed = failedUrl === backgroundUrl
 
   return (

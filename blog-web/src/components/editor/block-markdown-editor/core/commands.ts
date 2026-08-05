@@ -114,7 +114,13 @@ export const createBlockByType = (type: BlockType): EditorBlock => {
     case 'code':
       return { id: createBlockId(), type: 'code', code: '' }
     case 'image':
-      return { id: createBlockId(), type: 'image', url: '', alt: '' }
+      return {
+        id: createBlockId(),
+        type: 'image',
+        url: '',
+        alt: '',
+        align: 'left',
+      }
     case 'table':
       return createDefaultTableBlock()
     case 'divider':

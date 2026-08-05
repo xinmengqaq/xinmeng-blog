@@ -82,4 +82,20 @@ const value = 1
       markdown,
     )
   })
+
+  it('图片非左对齐时应输出可重新解析的受限 HTML', () => {
+    expect(
+      serializeBlocksToMarkdown([
+        {
+          id: 'image',
+          type: 'image',
+          url: 'https://example.com/a.png',
+          alt: '封面',
+          align: 'center',
+        },
+      ]),
+    ).toBe(
+      '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面"></p>',
+    )
+  })
 })

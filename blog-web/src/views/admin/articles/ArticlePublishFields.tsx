@@ -50,9 +50,9 @@ export const ArticlePublishFields = ({
     />
     <Switch
       checked={isRecommend}
-      label="推荐文章"
+      label="精选文章"
       description={
-        isRecommend ? '文章已进入推荐内容范围。' : '文章不会显示为推荐内容。'
+        isRecommend ? '文章已进入精选内容范围。' : '文章不会显示为精选内容。'
       }
       onChange={onRecommendChange}
     />

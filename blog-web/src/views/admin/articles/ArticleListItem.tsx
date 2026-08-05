@@ -67,7 +67,7 @@ export const ArticleListItem = ({
         {article.isRecommend ? (
           <span className="article-feature-flag">
             <Star />
-            推荐
+            精选
           </span>
         ) : null}
       </div>

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { usePublicSiteBackgroundQuery } from '@/queries/siteConfig'
+import { FrontPageTransitionContext } from '@/hooks/front/pageTransitionContext'
 import { FrontSiteBackground } from './FrontSiteBackground'
 
 vi.mock('@/queries/siteConfig', () => ({
@@ -30,6 +31,30 @@ describe('FrontSiteBackground', () => {
     fireEvent.load(image)
 
     // Then 头图不等待额外解码，立即进入淡入并缩小归位的状态
+    await waitFor(() => expect(image).toHaveClass('is-ready'))
+  })
+
+  it('首页过渡退出后才播放已经准备好的头图入场', async () => {
+    // Given 首页圆环仍覆盖页面，头图资源已经加载完成
+    const { rerender } = render(
+      <FrontPageTransitionContext.Provider value>
+        <FrontSiteBackground />
+      </FrontPageTransitionContext.Provider>,
+    )
+    const image = screen.getByRole('presentation')
+    fireEvent.load(image)
+
+    // Then 头图保持入场起始态，圆环不等待头图动画
+    expect(image).not.toHaveClass('is-ready')
+
+    // When 首页主请求结束，圆环退出
+    rerender(
+      <FrontPageTransitionContext.Provider value={false}>
+        <FrontSiteBackground />
+      </FrontPageTransitionContext.Provider>,
+    )
+
+    // Then 头图立即开始自身入场，不需要向圆环回报动画完成
     await waitFor(() => expect(image).toHaveClass('is-ready'))
   })
 

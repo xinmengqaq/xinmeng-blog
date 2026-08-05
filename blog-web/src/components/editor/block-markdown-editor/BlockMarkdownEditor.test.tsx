@@ -1030,6 +1030,60 @@ describe('BlockMarkdownEditor', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('图片工具应支持左中右排版并保存设置', () => {
+    const onChange = vi.fn()
+    render(
+      <BlockMarkdownEditor
+        value="![封面](https://example.com/a.png)"
+        onChange={onChange}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('img', { name: '封面' }))
+    fireEvent.click(screen.getByRole('button', { name: '图片居中对齐' }))
+
+    expect(
+      screen.getByRole('img', { name: '封面' }).closest('figure'),
+    ).toHaveStyle({
+      textAlign: 'center',
+    })
+    expect(onChange).toHaveBeenLastCalledWith(
+      '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面"></p>',
+    )
+  })
+
+  it('顶部上传图片应插入最近聚焦块之后', () => {
+    // Given 管理员把光标放在正文中间的内容块
+    // When 上传按钮夺取焦点后选择并确认一张正文图片
+    // Then 新图片仍插入原光标块之后，后面的正文顺序保持不变
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:cursor-image')
+    const onChange = vi.fn()
+    const { container } = render(
+      <BlockMarkdownEditor
+        value={'第一段\n\n第二段\n\n第三段'}
+        onChange={onChange}
+      />,
+    )
+    screen.getByText('第二段').focus()
+    const upload = screen.getByRole('button', { name: '上传图片' })
+    upload.focus()
+    fireEvent.click(upload)
+
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: {
+        files: [new File(['gif'], 'cursor.gif', { type: 'image/gif' })],
+      },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '确认 GIF' }))
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      '第一段\n\n第二段\n\n![](blob:cursor-image)\n\n第三段',
+    )
+    createObjectUrl.mockRestore()
+  })
+
   it('复制本地图片后移除其中一个块不应释放仍被历史和正文引用的草稿', () => {
     // Given 一个待保存图片块被复制为两个共享本地预览的块
     // When 管理员移除其中一个图片块

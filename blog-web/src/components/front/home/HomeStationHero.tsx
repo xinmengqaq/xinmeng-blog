@@ -11,6 +11,7 @@ import {
 } from '@/components/front/visual'
 import { frontSite } from '@/config/frontSite'
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
+import { useFrontPageTransitionActive } from '@/hooks/front/pageTransitionContext'
 import {
   type HomeIntroNodes,
   playHomeIntro,
@@ -35,6 +36,7 @@ export const HomeStationHero = () => {
   const [line, setLine] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const { motionAllowed } = useFrontMotionPreference()
+  const pageTransitionActive = useFrontPageTransitionActive()
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000)
@@ -75,6 +77,7 @@ export const HomeStationHero = () => {
       )
         return
       const nodes = values as HomeIntroNodes
+      if (pageTransitionActive) return
       if (!shouldPlayHomeIntro(motionAllowed)) {
         showHomeIntroFinal(nodes)
         return
@@ -85,7 +88,7 @@ export const HomeStationHero = () => {
     },
     {
       scope: rootRef,
-      dependencies: [motionAllowed],
+      dependencies: [motionAllowed, pageTransitionActive],
       revertOnUpdate: true,
     },
   )
