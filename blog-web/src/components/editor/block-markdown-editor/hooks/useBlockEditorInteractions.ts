@@ -8,7 +8,8 @@ import {
   useState,
 } from 'react'
 
-import { moveBlock } from '../core/commands'
+import { moveBlock, removeBlock } from '../core/commands'
+import { isBlockEmpty } from '../core/blockModel'
 import type { EditorBlock } from '../types'
 import { getClipboardBlocks } from '../utils/clipboard'
 import {
@@ -263,6 +264,34 @@ export const useBlockEditorInteractions = (
       target.closest<HTMLElement>('[data-block-id]')?.dataset.blockId
     if (!blockId) return
     if (!target.closest<HTMLElement>('[data-editor-input]')) return
+    if (
+      event.key === 'Backspace' &&
+      !modifier &&
+      !event.altKey &&
+      !event.shiftKey
+    ) {
+      const current = model.blocksRef.current
+      const index = current.findIndex((block) => block.id === blockId)
+      const block = current[index]
+      const selection = window.getSelection()
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null
+      const caretInsideInput =
+        selection?.isCollapsed &&
+        range &&
+        editorInput?.contains(range.startContainer)
+      const isEmptyTextBlock =
+        block &&
+        (block.type === 'paragraph' ||
+          block.type === 'heading' ||
+          block.type === 'quote') &&
+        isBlockEmpty(block)
+      if (index > 0 && caretInsideInput && isEmptyTextBlock) {
+        event.preventDefault()
+        model.commit(removeBlock(current, blockId))
+        model.focusBlock(current[index - 1].id)
+        return
+      }
+    }
     if (
       event.altKey &&
       !modifier &&

@@ -90,6 +90,46 @@ describe('BlockMarkdownEditor', () => {
     requestFrame.mockRestore()
   })
 
+  it('空文本块开头按退格应删除当前块并聚焦上一块', () => {
+    const callbacks: FrameRequestCallback[] = []
+    const requestFrame = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callbacks.push(callback)
+        return callbacks.length
+      })
+    const onChange = vi.fn()
+    const { container } = render(
+      <BlockMarkdownEditor value="上一段" onChange={onChange} />,
+    )
+    const previous = screen.getByText('上一段')
+    previous.focus()
+    const end = document.createRange()
+    end.selectNodeContents(previous)
+    end.collapse(false)
+    window.getSelection()?.removeAllRanges()
+    window.getSelection()?.addRange(end)
+    fireEvent.keyDown(previous, { key: 'Enter' })
+    act(() => callbacks.splice(0).forEach((callback) => callback(0)))
+    const empty = container.querySelectorAll<HTMLElement>(
+      '[data-editor-input]',
+    )[1]
+    const start = document.createRange()
+    start.selectNodeContents(empty)
+    start.collapse(true)
+    window.getSelection()?.removeAllRanges()
+    window.getSelection()?.addRange(start)
+
+    const allowed = fireEvent.keyDown(empty, { key: 'Backspace' })
+    act(() => callbacks.splice(0).forEach((callback) => callback(0)))
+
+    expect(allowed).toBe(false)
+    expect(onChange).toHaveBeenLastCalledWith('上一段')
+    expect(container.querySelectorAll('[data-editor-input]')).toHaveLength(1)
+    expect(document.activeElement).toBe(previous)
+    requestFrame.mockRestore()
+  })
+
   it('readOnly 时应禁止编辑并隐藏块创建入口', () => {
     render(<BlockMarkdownEditor value="只读正文" onChange={vi.fn()} readOnly />)
 
