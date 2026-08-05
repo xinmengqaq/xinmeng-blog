@@ -32,3 +32,8 @@ app.mount("/files", StaticFiles(directory=str(STORAGE_DIR)), name="files")
           response_model=ApiResponse[HealthCheckData])
 async def health_check() -> ApiResponse[HealthCheckData]:
     return ApiResponse(data=HealthCheckData(status="ok"))
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

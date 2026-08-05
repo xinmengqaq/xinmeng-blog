@@ -2,14 +2,15 @@ from enum import StrEnum
 
 
 class ResponseCode(StrEnum):
-    # 响应码采用字符串数字，便于与现有 Java 服务的响应契约保持一致。
-    # 所有应用处理的结果 HTTP 状态码统一 200，调用方按响应体 code 判断业务结果
+    # 响应码采用字符串数字，并与错误响应的 HTTP 状态保持一致。
     SUCCESS = "200"                    # 请求成功
     BAD_REQUEST = "400"                # 参数错误，或具体中文参数说明
     UNAUTHORIZED = "401"               # 未登录或 Token 无效
     FORBIDDEN = "403"                  # 无权限操作
     NOT_FOUND = "404"                  # 数据不存在，或具体中文资源说明
+    METHOD_NOT_ALLOWED = "405"         # 请求方法不支持
     CONFLICT = "409"                   # 数据冲突，或具体中文冲突说明
+    TOO_MANY_REQUESTS = "429"          # 请求过于频繁
     INTERNAL_SERVER_ERROR = "500"      # 系统异常
 
 
@@ -20,6 +21,8 @@ DEFAULT_MESSAGES = {
     ResponseCode.UNAUTHORIZED: "未登录或 Token 无效",
     ResponseCode.FORBIDDEN: "无权限操作",
     ResponseCode.NOT_FOUND: "数据不存在",
+    ResponseCode.METHOD_NOT_ALLOWED: "请求方法不支持",
     ResponseCode.CONFLICT: "数据冲突",
+    ResponseCode.TOO_MANY_REQUESTS: "请求过于频繁",
     ResponseCode.INTERNAL_SERVER_ERROR: "系统异常",
 }

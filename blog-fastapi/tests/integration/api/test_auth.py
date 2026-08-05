@@ -125,7 +125,7 @@ def test_missing_authorization_header():
     # 没带 Authorization 头 -> HTTPBearer 返回 None -> 抛 401 "未登录"
     response = client.get("/api/admin/test-protected")
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.json()
     assert body["code"] == "401"
     assert body["message"] == "未登录"
@@ -139,7 +139,7 @@ def test_invalid_token_format():
         headers=_auth_headers("not.a.valid.jwt"),
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.json()
     assert body["code"] == "401"
     assert body["message"] == "登录已过期，请重新登录"
@@ -151,7 +151,7 @@ def test_wrong_signature():
     token = _make_token(wrong_key=True)
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.json()
     assert body["code"] == "401"
     assert body["message"] == "登录已过期，请重新登录"
@@ -163,7 +163,7 @@ def test_expired_token():
     token = _make_token(expired=True)
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.json()
     assert body["code"] == "401"
     assert body["message"] == "登录已过期，请重新登录"
@@ -176,7 +176,7 @@ def test_missing_required_claim_returns_unauthorized(omitted_claim):
 
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     assert response.json() == {
         "code": "401",
         "message": "登录已过期，请重新登录",
@@ -193,7 +193,7 @@ def test_invalid_required_claim_type_returns_unauthorized(admin_id, password_ver
 
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     assert response.json() == {
         "code": "401",
         "message": "登录已过期，请重新登录",
@@ -208,7 +208,7 @@ def test_admin_not_found():
 
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 404
     body = response.json()
     assert body["code"] == "404"
     assert body["message"] == "管理员不存在"
@@ -222,7 +222,7 @@ def test_password_version_mismatch():
 
     response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.json()
     assert body["code"] == "401"
     assert body["message"] == "登录已过期，请重新登录"

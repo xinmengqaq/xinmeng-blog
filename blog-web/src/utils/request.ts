@@ -1,5 +1,6 @@
 import axios, {
   type AxiosRequestConfig,
+  type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
 
@@ -23,13 +24,40 @@ export const toApiError = (error: unknown): ApiError => {
   }
 
   if (axios.isAxiosError(error)) {
+    const response = error.response
+    if (response) {
+      const result = response.data
+      if (typeof result === 'object' && result !== null) {
+        const payload = result as Record<string, unknown>
+        if (typeof payload.code === 'string') {
+          const message =
+            typeof payload.message === 'string'
+              ? payload.message
+              : typeof payload.msg === 'string'
+                ? payload.msg
+                : '请求失败，请稍后重试'
+          return {
+            code: payload.code,
+            message,
+            status: response.status,
+            details: payload.data,
+          }
+        }
+      }
+
+      return {
+        code: String(response.status),
+        message:
+          response.status === 401
+            ? '登录已失效，请重新登录'
+            : '请求失败，请稍后重试',
+        status: response.status,
+      }
+    }
+
     return {
-      code: error.response?.status === 401 ? '401' : 'NETWORK_ERROR',
-      message:
-        error.response?.status === 401
-          ? '登录已失效，请重新登录'
-          : '无法连接后端服务，请确认服务是否已启动',
-      status: error.response?.status,
+      code: 'NETWORK_ERROR',
+      message: '无法连接后端服务，请确认服务是否已启动',
     }
   }
 
@@ -55,7 +83,7 @@ const requestInterceptor = (config: InternalAxiosRequestConfig) => {
   return config
 }
 
-const processResponse = (response: any) => {
+const processResponse = (response: AxiosResponse<ApiResult<unknown>>) => {
   const result = response.data as ApiResult<unknown>
 
   if (result && typeof result.code === 'string' && isSuccessCode(result.code)) {

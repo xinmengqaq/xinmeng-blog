@@ -13,9 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,42 +33,44 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("业务异常会按业务错误码返回")
-    void testHandleBusinessExceptionReturnsBusinessCode() {
-        BusinessException exception = new BusinessException(ErrorCode.NOT_FOUND, "管理员不存在");
+    void testHandleBusinessExceptionReturnsBusinessCode() throws Exception {
+        MockMvc mockMvc = buildMockMvc();
 
-        Result result = handler.handleBusinessException(exception);
-
-        assertThat(result.getCode()).isEqualTo(ErrorCode.NOT_FOUND.getCode());
-        assertThat(result.getMsg()).isEqualTo("管理员不存在");
-        assertThat(result.getData()).isNull();
+        mockMvc.perform(get("/test/business").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("404"))
+                .andExpect(jsonPath("$.msg").value("管理员不存在"))
+                .andExpect(jsonPath("$.data").doesNotExist());
     }
 
     @Test
     @DisplayName("JWT 异常会返回未登录错误")
-    void testHandleJwtExceptionReturnsUnauthorized() {
-        Result result = handler.handleJwtException(new MalformedJwtException("token 格式错误"));
+    void testHandleJwtExceptionReturnsUnauthorized() throws Exception {
+        MockMvc mockMvc = buildMockMvc();
 
-        assertThat(result.getCode()).isEqualTo(ErrorCode.UNAUTHORIZED.getCode());
-        assertThat(result.getMsg()).isEqualTo("登录已过期，请重新登录");
-        assertThat(result.getData()).isNull();
+        mockMvc.perform(get("/test/jwt").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"))
+                .andExpect(jsonPath("$.msg").value("登录已过期，请重新登录"))
+                .andExpect(jsonPath("$.data").doesNotExist());
     }
 
     @Test
     @DisplayName("系统异常会返回统一系统错误")
-    void testHandleExceptionReturnsSystemError() {
-        Result result = handler.handleException(new RuntimeException("数据库连接失败"));
+    void testHandleExceptionReturnsSystemError() throws Exception {
+        MockMvc mockMvc = buildMockMvc();
 
-        assertThat(result.getCode()).isEqualTo(ErrorCode.SYSTEM_ERROR.getCode());
-        assertThat(result.getMsg()).isEqualTo(ErrorCode.SYSTEM_ERROR.getMessage());
-        assertThat(result.getData()).isNull();
+        mockMvc.perform(get("/test/system").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("500"))
+                .andExpect(jsonPath("$.msg").value("系统异常"))
+                .andExpect(jsonPath("$.data").doesNotExist());
     }
 
     @Test
     @DisplayName("请求方法不支持时返回 HTTP 405 和统一错误响应")
     void testUnsupportedRequestMethodReturnsMethodNotAllowed() throws Exception {
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new MethodRestrictedController())
-                .setControllerAdvice(handler)
-                .build();
+        MockMvc mockMvc = buildMockMvc();
 
         mockMvc.perform(get("/test/method").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isMethodNotAllowed())
@@ -76,6 +78,31 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("405"))
                 .andExpect(jsonPath("$.msg").value("请求方法不支持"))
                 .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    private MockMvc buildMockMvc() {
+        return MockMvcBuilders.standaloneSetup(new ExceptionController(), new MethodRestrictedController())
+                .setControllerAdvice(handler)
+                .build();
+    }
+
+    @RestController
+    private static class ExceptionController {
+
+        @GetMapping("/test/business")
+        Result business() {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "管理员不存在");
+        }
+
+        @GetMapping("/test/jwt")
+        Result jwt() {
+            throw new MalformedJwtException("token 格式错误");
+        }
+
+        @GetMapping("/test/system")
+        Result system() {
+            throw new RuntimeException("数据库连接失败");
+        }
     }
 
     @RestController

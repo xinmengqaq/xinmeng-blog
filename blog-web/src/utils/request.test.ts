@@ -16,6 +16,21 @@ const makeAdapter =
       config,
     })
 
+const makeErrorAdapter =
+  (data: unknown, status: number): AxiosAdapter =>
+  (config) => {
+    const response = {
+      data,
+      status,
+      statusText: String(status),
+      headers: {},
+      config,
+    }
+    return Promise.reject(
+      new AxiosError('Request failed', undefined, config, undefined, response),
+    )
+  }
+
 describe('request', () => {
   afterEach(() => {
     apiClient.defaults.adapter = undefined
@@ -41,26 +56,28 @@ describe('request', () => {
   })
 
   it('后端业务失败时抛出统一错误对象', async () => {
-    apiClient.defaults.adapter = makeAdapter({
-      code: '400',
-      msg: '参数错误',
-      data: null,
-    })
+    apiClient.defaults.adapter = makeErrorAdapter(
+      { code: '400', msg: '参数错误', data: null },
+      400,
+    )
 
     await expect(request.get('/bad')).rejects.toMatchObject({
       code: '400',
       message: '参数错误',
-      status: 200,
+      status: 400,
     })
   })
 
   it('后端业务失败时保留结构化错误详情', async () => {
     // Given 后端返回带等待秒数的点赞限频错误
-    apiClient.defaults.adapter = makeAdapter({
-      code: '429',
-      msg: '点赞过于频繁',
-      data: { retryAfterSeconds: 45 },
-    })
+    apiClient.defaults.adapter = makeErrorAdapter(
+      {
+        code: '429',
+        msg: '点赞过于频繁',
+        data: { retryAfterSeconds: 45 },
+      },
+      429,
+    )
 
     // When 前端请求公开点赞接口
     const response = request.post('/articles/9/like')
@@ -80,11 +97,10 @@ describe('request', () => {
       name: '管理员',
       role: 'admin',
     })
-    apiClient.defaults.adapter = makeAdapter({
-      code: '401',
-      msg: '登录已失效',
-      data: null,
-    })
+    apiClient.defaults.adapter = makeErrorAdapter(
+      { code: '401', msg: '登录已失效', data: null },
+      401,
+    )
 
     await expect(request.get('/expired')).rejects.toMatchObject({ code: '401' })
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
@@ -120,16 +136,15 @@ describe('request', () => {
     // Given /api/admin/files 返回 FastAPI 的 message 错误字段
     // When 前端通过统一 /api 客户端处理响应
     // Then 页面得到与 Spring 接口一致的错误对象
-    apiClient.defaults.adapter = makeAdapter({
-      code: '400',
-      message: '参数错误',
-      data: null,
-    })
+    apiClient.defaults.adapter = makeErrorAdapter(
+      { code: '400', message: '参数错误', data: null },
+      400,
+    )
 
     await expect(request.get('/admin/files/bad')).rejects.toMatchObject({
       code: '400',
       message: '参数错误',
-      status: 200,
+      status: 400,
     })
   })
 
@@ -146,17 +161,16 @@ describe('request', () => {
 
     apiClient.defaults.adapter = (config) => {
       expect(config.headers?.Authorization).toBe('Bearer token-1')
-      return makeAdapter({
-        code: '401',
-        message: '登录已失效',
-        data: null,
-      })(config)
+      return makeErrorAdapter(
+        { code: '401', message: '登录已失效', data: null },
+        401,
+      )(config)
     }
 
     await expect(request.get('/admin/files/expired')).rejects.toMatchObject({
       code: '401',
       message: '登录已失效',
-      status: 200,
+      status: 401,
     })
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
   })

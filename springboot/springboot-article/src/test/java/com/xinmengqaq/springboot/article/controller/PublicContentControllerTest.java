@@ -164,7 +164,7 @@ class PublicContentControllerTest {
                 .thenThrow(new ArticleLikeRateLimitException(30));
 
         mockMvc.perform(post("/api/articles/1/like"))
-                .andExpect(status().isOk())
+                .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("429"))
                 .andExpect(jsonPath("$.data.retryAfterSeconds").value(30));
     }

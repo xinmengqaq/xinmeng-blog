@@ -19,6 +19,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -152,10 +153,10 @@ public class PublicContentController {
     }
 
     @ExceptionHandler(ArticleLikeRateLimitException.class)
-    public Result handleArticleLikeRateLimit(ArticleLikeRateLimitException exception) {
+    public ResponseEntity<Result> handleArticleLikeRateLimit(ArticleLikeRateLimitException exception) {
         Result result = Result.error("429", exception.getMessage());
         result.setData(Map.of("retryAfterSeconds", exception.getRetryAfterSeconds()));
-        return result;
+        return ResponseEntity.status(429).body(result);
     }
 
     private String resolveVisitorId(HttpServletRequest request, HttpServletResponse response) {

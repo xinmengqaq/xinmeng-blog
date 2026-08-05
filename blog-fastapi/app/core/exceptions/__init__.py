@@ -3,7 +3,7 @@ from app.core.response_codes import ResponseCode, DEFAULT_MESSAGES
 
 class AppException(Exception):
     # 应用异常的公共数据结构；子类通过不同类型表达业务失败和系统失败。
-    # 异常对象只保存业务 code 和内部 message，HTTP 状态码由异常处理器统一决定。
+    # 异常对象保存业务 code 和内部 message，异常处理器据此设置 HTTP 状态。
     def __init__(
         self,
         *,

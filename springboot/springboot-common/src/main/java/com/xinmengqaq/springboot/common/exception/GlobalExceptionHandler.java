@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 
 @RestControllerAdvice
@@ -37,8 +38,8 @@ public class GlobalExceptionHandler {
  * @return 返回一个Result对象，包含错误码和错误信息
  */
     @ExceptionHandler(BusinessException.class)  // 标记此方法用于处理BusinessException类型的异常
-    public Result handleBusinessException(BusinessException e) {  // 方法参数为BusinessException类型的异常
-        return Result.error(e.getCode(), e.getMessage());  // 返回错误码和错误信息的Result对象
+    public ResponseEntity<Result> handleBusinessException(BusinessException e) {
+        return error(resolveHttpStatus(e.getCode()), Result.error(e.getCode(), e.getMessage()));
     }
 
     /**
@@ -47,10 +48,10 @@ public class GlobalExceptionHandler {
      * @return 错误信息
      */
     @ExceptionHandler(BindException.class)
-    public Result handleBindException(BindException e) {  // 定义处理绑定异常的方法，接收BindException类型的参数e
+    public ResponseEntity<Result> handleBindException(BindException e) {
         FieldError fieldError = e.getBindingResult().getFieldError();   // 从绑定结果中获取第一个字段错误信息
         String msg = fieldError != null ? fieldError.getDefaultMessage() : ErrorCode.PARAM_ERROR.getMessage();   // 如果存在字段错误则使用其默认消息，否则使用参数错误的默认消息
-        return Result.error(ErrorCode.PARAM_ERROR, msg);  // 返回一个错误结果，包含参数错误代码和消息
+        return error(HttpStatus.BAD_REQUEST, Result.error(ErrorCode.PARAM_ERROR, msg));
     }
 
     /**
@@ -59,8 +60,9 @@ public class GlobalExceptionHandler {
      * @return 错误信息
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public Result handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
-        return Result.error(ErrorCode.PARAM_ERROR, e.getParameterName() + " 不能为空");
+    public ResponseEntity<Result> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        return error(HttpStatus.BAD_REQUEST,
+                Result.error(ErrorCode.PARAM_ERROR, e.getParameterName() + " 不能为空"));
     }
 
     /**
@@ -89,9 +91,9 @@ public class GlobalExceptionHandler {
      * @return 错误信息
      */
     @ExceptionHandler(Exception.class)
-    public Result handleException(Exception e) {
+    public ResponseEntity<Result> handleException(Exception e) {
         log.error("系统异常", e);
-        return Result.error(ErrorCode.SYSTEM_ERROR);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, Result.error(ErrorCode.SYSTEM_ERROR));
     }
 
     /**
@@ -100,19 +102,38 @@ public class GlobalExceptionHandler {
      * @return 错误信息
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ResponseEntity<Result> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getBindingResult().getFieldError();
         String msg = fieldError != null ? fieldError.getDefaultMessage() : ErrorCode.PARAM_ERROR.getMessage();
-        return Result.error(ErrorCode.PARAM_ERROR, msg);
+        return error(HttpStatus.BAD_REQUEST, Result.error(ErrorCode.PARAM_ERROR, msg));
     }
 
     /**
      * 处理 JWT 解析、签名、过期等异常。
      */
     @ExceptionHandler(JwtException.class)
-    public Result handleJwtException(JwtException e) {
-        return Result.error(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录");
+    public ResponseEntity<Result> handleJwtException(JwtException e) {
+        return error(HttpStatus.UNAUTHORIZED,
+                Result.error(ErrorCode.UNAUTHORIZED, "登录已过期，请重新登录"));
 
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Result> handleNoResourceFoundException(NoResourceFoundException e) {
+        return error(HttpStatus.NOT_FOUND, Result.error(ErrorCode.NOT_FOUND));
+    }
+
+    private ResponseEntity<Result> error(HttpStatus status, Result result) {
+        return ResponseEntity.status(status).body(result);
+    }
+
+    private HttpStatus resolveHttpStatus(String code) {
+        try {
+            HttpStatus status = HttpStatus.resolve(Integer.parseInt(code));
+            return status != null && status.isError() ? status : HttpStatus.BAD_REQUEST;
+        } catch (NumberFormatException e) {
+            return HttpStatus.BAD_REQUEST;
+        }
     }
 
 }

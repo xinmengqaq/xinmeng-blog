@@ -197,7 +197,7 @@ def test_upload_rejects_empty_file():
         files={"file": ("test.png", b"", "image/png")},
     )
     # 断言响应状态码为 400，即失败
-    assert response.status_code == 200
+    assert response.status_code == 400
     body = response.json()
     assert body["code"] == "400"
     assert body["message"] == "文件为空"
@@ -210,7 +210,7 @@ def test_upload_rejects_wrong_extension():
         "/api/admin/files/articles/content-images",
         files={"file": ("test.txt", content, "text/plain")},
     )
-    assert response.status_code == 200
+    assert response.status_code == 400
     body = response.json()
     assert body["code"] == "400"
     assert body["message"] == "文件类型不允许"
@@ -222,7 +222,7 @@ def test_upload_rejects_fake_image():
         "/api/admin/files/articles/content-images",
         files={"file": ("test.png", b"not an image", "image/png")},
     )
-    assert response.status_code == 200
+    assert response.status_code == 400
     body = response.json()
     assert body["code"] == "400"
     assert body["message"] == "文件真实内容不是允许的图片"
@@ -231,7 +231,7 @@ def test_upload_rejects_fake_image():
 # 测试上传空文件失败, 并返回错误信息
 def test_upload_without_file_returns_400():
     response = client.post("/api/admin/files/articles/content-images")
-    assert response.status_code == 200
+    assert response.status_code == 400
     body = response.json()
     assert body["code"] == "400"
     assert body["message"] == "参数错误"
@@ -246,7 +246,7 @@ def test_upload_storage_failure_returns_500():
             "/api/admin/files/articles/content-images",
             files={"file": ("test.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 500
         body = response.json()
         assert body["code"] == "500"
         assert body["message"] == "系统异常"
@@ -257,7 +257,7 @@ def test_upload_storage_failure_returns_500():
 # 测试上传不存在的路由失败, 并返回错误信息
 def test_nonexistent_route_returns_404():
     response = client.post("/api/admin/files/articles/nonexistent")
-    assert response.status_code == 200
+    assert response.status_code == 404
     body = response.json()
     assert body["code"] == "404"
     assert body["message"] == "数据不存在"
@@ -289,7 +289,7 @@ def test_upload_unhandled_exception_returns_500():
             "/api/admin/files/articles/content-images",
             files={"file": ("test.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 500
         body = response.json()
         assert body["code"] == "500"
         assert body["message"] == "系统异常"
@@ -375,7 +375,7 @@ def test_cleanup_content_image_rejects_empty_file_url(tmp_path):
             json={"file_url": ""},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert response.json() == {
             "code": "400",
             "message": "参数错误",

@@ -196,7 +196,7 @@ def test_upload_avatar_rejects_gif(tmp_path):
             files={"file": ("avatar.gif", _make_gif_bytes(), "image/gif")},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         body = response.json()
         assert body["code"] == "400"
         assert body["message"] == "文件类型不允许"
@@ -218,7 +218,7 @@ def test_upload_avatar_admin_not_found(tmp_path):
             "/api/admin/files/profile/avatar",
             files={"file": ("avatar.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 404
         body = response.json()
         assert body["code"] == "404"
         assert body["message"] == "管理员不存在"
@@ -242,7 +242,7 @@ def test_upload_avatar_db_failure_cleans_new_file(tmp_path):
             "/api/admin/files/profile/avatar",
             files={"file": ("avatar.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 500
         body = response.json()
         assert body["code"] == "500"
         assert body["message"] == "系统异常"

@@ -190,7 +190,7 @@ def test_upload_cover_rejects_gif(tmp_path):
             files={"file": ("cover.gif", _make_gif_bytes(), "image/gif")},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         body = response.json()
         assert body["code"] == "400"
         assert body["message"] == "文件类型不允许"
@@ -211,7 +211,7 @@ def test_upload_cover_article_not_found(tmp_path):
             "/api/admin/files/articles/99999/cover",
             files={"file": ("cover.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 404
         body = response.json()
         assert body["code"] == "404"
         assert body["message"] == "文章不存在"
@@ -234,7 +234,7 @@ def test_upload_cover_db_failure_cleans_new_file(tmp_path):
             f"/api/admin/files/articles/{article_id}/cover",
             files={"file": ("cover.png", content, "image/png")},
         )
-        assert response.status_code == 200
+        assert response.status_code == 500
         body = response.json()
         assert body["code"] == "500"
         assert body["message"] == "系统异常"

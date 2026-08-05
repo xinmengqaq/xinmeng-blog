@@ -78,7 +78,7 @@ def test_content_image_rejects_missing_token(tmp_path):
             files={"file": ("test.png", content, "image/png")},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         body = response.json()
         assert body["code"] == "401"
         assert body["message"] == "未登录"
@@ -103,7 +103,7 @@ def test_content_image_rejects_invalid_token(tmp_path):
             headers={"Authorization": "Bearer invalid.token.here"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         body = response.json()
         assert body["code"] == "401"
         assert body["message"] == "登录已过期，请重新登录"
@@ -123,7 +123,7 @@ def test_content_image_cleanup_rejects_missing_token_without_side_effect(_mock_d
         json={"file_url": "/files/articles/content/image.png"},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     assert response.json() == {
         "code": "401",
         "message": "未登录",
@@ -145,7 +145,7 @@ def test_article_cover_rejects_missing_token(tmp_path):
             files={"file": ("cover.png", content, "image/png")},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         body = response.json()
         assert body["code"] == "401"
         assert body["message"] == "未登录"
@@ -168,7 +168,7 @@ def test_site_background_rejects_missing_token(tmp_path):
             files={"file": ("background.png", content, "image/png")},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         body = response.json()
         assert body["code"] == "401"
         assert body["message"] == "未登录"
@@ -192,7 +192,7 @@ def test_site_background_rejects_invalid_token(tmp_path):
             headers={"Authorization": "Bearer invalid.token.here"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         body = response.json()
         assert body["code"] == "401"
         assert body["message"] == "登录已过期，请重新登录"
@@ -216,7 +216,7 @@ def test_site_background_rejects_invalid_token(tmp_path):
 def test_bound_image_remove_rejects_missing_token_without_side_effect(_mock_db, path):
     response = client.delete(path)
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     assert response.json() == {
         "code": "401",
         "message": "未登录",

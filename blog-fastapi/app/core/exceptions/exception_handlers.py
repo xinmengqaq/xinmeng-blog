@@ -15,6 +15,14 @@ DEBUG = os.getenv("APP_ENV", "development") == "development"
 logger = logging.getLogger("app.exceptions")
 
 
+def http_status_from_code(code: str, default: int = 400) -> int:
+    try:
+        status_code = int(code)
+    except (TypeError, ValueError):
+        return default
+    return status_code if 400 <= status_code <= 599 else default
+
+
 async def business_exception_handler(request: Request, exc: BusinessException) -> JSONResponse:
     # 业务异常是预期分支；开发环境记录请求位置和业务码，便于定位调用链。
     if DEBUG:
@@ -23,7 +31,7 @@ async def business_exception_handler(request: Request, exc: BusinessException) -
             request.method, request.url.path, exc.code,
         )
     return JSONResponse(
-        status_code=200,  # 业务失败仍使用 HTTP 200，客户端通过响应体 code 区分结果。
+        status_code=http_status_from_code(exc.code),
         content={"code": exc.code, "message": exc.message, "data": None},
     )
 
@@ -36,7 +44,7 @@ async def system_exception_handler(request: Request, exc: SystemException) -> JS
         exc_info=True,
     )
     return JSONResponse(
-        status_code=200,
+        status_code=500,
         content={
             "code": ResponseCode.INTERNAL_SERVER_ERROR,
             "message": DEFAULT_MESSAGES[ResponseCode.INTERNAL_SERVER_ERROR],
@@ -53,7 +61,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         exc_info=True,
     )
     return JSONResponse(
-        status_code=200,
+        status_code=500,
         content={
             "code": ResponseCode.INTERNAL_SERVER_ERROR,
             "message": DEFAULT_MESSAGES[ResponseCode.INTERNAL_SERVER_ERROR],
@@ -66,7 +74,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     # FastAPI 的请求校验异常转换为统一业务响应，客户端不需要理解内部字段结构。
     # 对外统一 code="400"、message="参数错误"，不暴露内部字段结构
     return JSONResponse(
-        status_code=200,
+        status_code=400,
         content={
             "code": ResponseCode.BAD_REQUEST,
             "message": DEFAULT_MESSAGES[ResponseCode.BAD_REQUEST],
@@ -81,15 +89,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         return await fastapi_http_exception_handler(request, exc)
 
     # 框架级 HTTP 异常统一转换为业务响应，常见于路由不存在或方法不允许。
-    # code 优先用基础码表对应值，不在码表里的归 "400"
+    # 保留框架给出的 HTTP 状态，已知状态使用项目统一中文消息。
     code = str(exc.status_code)
     try:
         message = DEFAULT_MESSAGES[ResponseCode(code)]
     except ValueError:
-        code = ResponseCode.BAD_REQUEST
-        message = DEFAULT_MESSAGES[ResponseCode.BAD_REQUEST]
+        message = "请求失败"
     return JSONResponse(
-        status_code=200,
+        status_code=exc.status_code,
         content={"code": code, "message": message, "data": None},
     )
 

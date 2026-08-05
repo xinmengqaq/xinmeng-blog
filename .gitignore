@@ -42,6 +42,7 @@
 **/application-production.properties
 
 # 私钥、证书及常见凭据文件
+/pgsql/sql密码.txt
 **/*.pem
 **/*.key
 **/*.p12
