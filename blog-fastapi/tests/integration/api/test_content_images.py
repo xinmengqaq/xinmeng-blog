@@ -37,6 +37,12 @@ def _make_gif_bytes() -> bytes:
     Image.new("RGB", (1, 1)).save(buf, format="GIF")
     return buf.getvalue()
 
+
+def _make_bmp_bytes() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(buf, format="BMP")
+    return buf.getvalue()
+
 # 测试客户端，模块级创建 TestClient 实例，避免每个测试函数都创建实例，后续可直接调用 app 的 ASGI 接口
 # raise_server_exceptions=False 让兜底 Exception 处理器正常返回响应，而不是把异常 re-raise 到测试代码
 client = TestClient(app, raise_server_exceptions=False)
@@ -209,6 +215,18 @@ def test_upload_rejects_wrong_extension():
     response = client.post(
         "/api/admin/files/articles/content-images",
         files={"file": ("test.txt", content, "text/plain")},
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body["code"] == "400"
+    assert body["message"] == "文件类型不允许"
+    assert body["data"] is None
+
+
+def test_upload_rejects_unsupported_actual_format():
+    response = client.post(
+        "/api/admin/files/articles/content-images",
+        files={"file": ("test.png", _make_bmp_bytes(), "image/png")},
     )
     assert response.status_code == 400
     body = response.json()

@@ -21,8 +21,13 @@ class Settings(BaseSettings):
     log_level: str | None = None
 
     jwt_secret: str
-    jwt_expire_seconds: int  # 无默认：必须配
-    jwt_clock_skew_seconds: int  # 无默认：必须配
+    jwt_expire_seconds: int
+    jwt_clock_skew_seconds: int
+
+    openai_base_url: str = "https://api.deepseek.com/v1"
+    openai_api_key: str = ""
+    openai_reasoning_effort: str = "medium"
+    openai_context_window: int = 65536
 
 
 settings = Settings()

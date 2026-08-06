@@ -3,6 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
+import filetype
 from PIL import Image
 from loguru import logger
 from sqlalchemy import select
@@ -21,13 +22,6 @@ from app.modules.file.storage.base import StorageBackend
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
 # 允许上传的文件 MIME 类型
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-EXT_TO_MIME = {
-    "jpg": "image/jpeg",
-    "jpeg": "image/jpeg",
-    "png": "image/png",
-    "webp": "image/webp",
-    "gif": "image/gif",
-}
 
 # 最大上传文件大小
 MAX_CONTENT_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -63,8 +57,13 @@ def validate_content_image(
     if content_type not in ALLOWED_MIME_TYPES:
         raise BusinessException(message="文件类型不允许")
 
-    # 扩展名与 MIME 必须对应，防止单独改扩展名或单独改 Content-Type 伪造
-    if EXT_TO_MIME.get(ext) != content_type:
+    kind = filetype.guess(content)
+    if kind is None:
+        raise BusinessException(message="文件真实内容不是允许的图片")
+
+    # filetype 的 JPEG 扩展名统一为 jpg，需兼容客户端常见的 .jpeg 后缀。
+    normalized_ext = "jpg" if ext == "jpeg" else ext
+    if normalized_ext != kind.extension or content_type != kind.mime:
         raise BusinessException(message="文件类型不允许")
 
     if ext == "gif" and not allow_gif:

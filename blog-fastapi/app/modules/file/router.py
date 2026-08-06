@@ -200,4 +200,3 @@ async def delete_site_background(
 ) -> ApiResponse[None]:
     await remove_site_background(storage, session)
     return ApiResponse(data=None)
-
