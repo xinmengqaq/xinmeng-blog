@@ -20,6 +20,20 @@
   object-fit: contain;
 }
 
+.front-icon__fallback,
+.front-icon__image {
+  grid-area: 1 / 1;
+}
+
+.front-icon__image {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.front-icon__image.is-loaded {
+  opacity: 1;
+}
+
 .front-icon--active {
   background: var(--front-pink-soft);
 }

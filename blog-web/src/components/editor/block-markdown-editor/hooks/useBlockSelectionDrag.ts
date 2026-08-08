@@ -95,7 +95,8 @@ export const useBlockSelectionDrag = (
         .filter((block) => intersects(block.getBoundingClientRect(), selection))
         .map((block) => block.dataset.blockId)
         .filter((blockId): blockId is string => Boolean(blockId))
-      model.setBlockSelection(selectedIds)
+      model.clearBlockSelection()
+      selectedIds.forEach((blockId) => model.selectBlock(blockId, 'toggle'))
     },
     [model],
   )

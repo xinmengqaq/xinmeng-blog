@@ -24,7 +24,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 
 import {
   frontIconAssets,
@@ -74,10 +74,11 @@ export const FrontIcon = ({
   label,
   className = '',
 }: Props) => {
-  const [failed, setFailed] = useState(false)
+  const [loadedName, setLoadedName] = useState<FrontIconName | null>(null)
+  const [failedName, setFailedName] = useState<FrontIconName | null>(null)
   const FallbackIcon = fallbackIcons[name]
-
-  useEffect(() => setFailed(false), [name])
+  const imageLoaded = loadedName === name
+  const imageFailed = failedName === name
 
   return (
     <span
@@ -87,16 +88,19 @@ export const FrontIcon = ({
       aria-label={decorative ? undefined : label}
       role={decorative ? undefined : 'img'}
     >
-      {failed ? (
-        <FallbackIcon aria-hidden="true" />
-      ) : (
+      {!imageLoaded ? (
+        <FallbackIcon aria-hidden="true" className="front-icon__fallback" />
+      ) : null}
+      {!imageFailed ? (
         <img
           alt=""
+          className={`front-icon__image ${imageLoaded ? 'is-loaded' : ''}`.trim()}
           src={frontIconAssets[name]}
           draggable={false}
-          onError={() => setFailed(true)}
+          onError={() => setFailedName(name)}
+          onLoad={() => setLoadedName(name)}
         />
-      )}
+      ) : null}
     </span>
   )
 }
