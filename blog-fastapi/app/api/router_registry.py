@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 
 from app.modules.file.router import (
-    router as file_router,
-    profile_router,
-    site_config_router,
+    admin_router,
+    user_router,
 )
 
 
@@ -17,6 +16,5 @@ class RouterRegistry:
     def register_all(self) -> None:
         # 全局前缀用于区分后台接口，模块前缀用于表达资源所属领域。
         # 多层前缀会按路由装配顺序合并为最终访问路径。
-        self.app.include_router(file_router, prefix="/api/admin/files")
-        self.app.include_router(profile_router, prefix="/api/admin/files")
-        self.app.include_router(site_config_router, prefix="/api/admin/files")
+        self.app.include_router(admin_router, prefix="/api/admin/files")
+        self.app.include_router(user_router, prefix="/api/user/files")

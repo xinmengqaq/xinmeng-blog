@@ -34,6 +34,11 @@ async def get_admin_by_id(admin_id: int, session: AsyncSession) -> Admin | None:
 
 async def authenticate(token: str, session: AsyncSession) -> int:
     claims = decode_token(token)
+    if claims.get("principalType") == "user":
+        raise BusinessException(
+            code=ResponseCode.UNAUTHORIZED,
+            message="登录已过期，请重新登录",
+        )
     try:
         admin_id = int(claims["sub"])
         token_password_version = int(claims["passwordVersion"])
