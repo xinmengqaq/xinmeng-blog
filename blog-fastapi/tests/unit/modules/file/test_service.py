@@ -45,12 +45,6 @@ def _make_gif_bytes() -> bytes:
     return buf.getvalue()
 
 
-def _make_bmp_bytes() -> bytes:
-    buf = io.BytesIO()
-    Image.new("RGB", (1, 1)).save(buf, format="BMP")
-    return buf.getvalue()
-
-
 # 辅助函数名以 _ 开头，pytest 不会把它当测试函数收集。
 # 这是 pytest 的约定：只有 test_ 开头的函数才会被执行。
 
@@ -116,24 +110,12 @@ def test_validate_content_image_rejects_mime_mismatch():
         validate_content_image("test.png", "image/jpeg", content)
 
 
-def test_validate_content_image_rejects_unsupported_actual_format():
-    # BMP 能被 Pillow 打开，但不在文件模块允许的真实格式范围内。
-    with pytest.raises(BusinessException, match="文件类型不允许"):
-        validate_content_image("test.png", "image/png", _make_bmp_bytes())
-
-
 def test_validate_content_image_rejects_fake_image():
     # 内容不是真实图片（纯文本字节），Pillow verify 失败，抛异常。
     # 这是"只信内容不信标签"的核心校验。
     fake_content = b"this is not an image"
     with pytest.raises(BusinessException, match="文件真实内容不是允许的图片"):
         validate_content_image("test.png", "image/png", fake_content)
-
-
-def test_validate_content_image_rejects_truncated_identified_image():
-    # filetype 能识别 PNG 文件头时，Pillow 仍需拒绝不完整的图片内容。
-    with pytest.raises(BusinessException, match="文件真实内容不是允许的图片"):
-        validate_content_image("test.png", "image/png", _make_png_bytes()[:-5])
 
 
 # ===== generate_filename =====

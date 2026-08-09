@@ -109,19 +109,6 @@
   width: 16px;
 }
 
-.block-editor--selecting {
-  user-select: none;
-}
-
-.block-editor__selection-rect {
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-  border: 1px solid var(--color-accent);
-  border-radius: 2px;
-  pointer-events: none;
-  position: fixed;
-  z-index: 35;
-}
-
 .block-editor__shortcut-drawer {
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);

@@ -1,7 +1,6 @@
 package com.xinmengqaq.springboot.admin.controller;
 
 import cn.hutool.extra.servlet.JakartaServletUtil;
-import com.xinmengqaq.springboot.admin.vo.AdminCaptchaVO;
 import com.xinmengqaq.springboot.common.Result;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
@@ -9,6 +8,7 @@ import com.xinmengqaq.springboot.admin.dto.AdminLoginDTO;
 import com.xinmengqaq.springboot.admin.dto.AdminPasswordChangeDTO;
 import com.xinmengqaq.springboot.admin.dto.AdminProfileUpdateDTO;
 import com.xinmengqaq.springboot.admin.service.AdminService;
+import com.xinmengqaq.springboot.admin.vo.AdminCaptchaVO;
 import com.xinmengqaq.springboot.admin.vo.AdminVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -233,10 +233,10 @@ public class AdminController {
         log.info("收到验证码请求，clientIP={}", clientIP);
 
         //获取验证码
-        AdminCaptchaVO adminCaptchaVO = adminService.createCaptcha(clientIP);
+        AdminCaptchaVO captchaVO = adminService.createCaptcha(clientIP);
 
 
-        return Result.success(adminCaptchaVO);
+        return Result.success(captchaVO);
     }
 
     /**

@@ -10,5 +10,15 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
+    <dependencies>
+        <!-- MyBatis-Plus JSqlParser：3.5.9  分页插件依赖它解析 SQL -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+
+    </dependencies>
     <artifactId>springboot-common</artifactId>
+
+
 </project>

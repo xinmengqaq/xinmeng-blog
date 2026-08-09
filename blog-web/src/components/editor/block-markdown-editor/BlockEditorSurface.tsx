@@ -10,7 +10,6 @@ import {
 } from './utils/dom'
 import type { BlockEditorInteractions } from './hooks/useBlockEditorInteractions'
 import type { EditorImageUpload } from './hooks/useEditorImageUpload'
-import { useBlockSelectionDrag } from './hooks/useBlockSelectionDrag'
 import { useSelectedEditorImage } from './hooks/useSelectedEditorImage'
 import {
   isEmptyEditorBlock,
@@ -46,7 +45,6 @@ export const BlockEditorSurface = ({
   imageUpload,
 }: BlockEditorSurfaceProps) => {
   const selectedImage = useSelectedEditorImage(model)
-  const blockSelection = useBlockSelectionDrag(model, !readOnly && !disabled)
 
   const openImageAtCaret = () => {
     const active = document.activeElement
@@ -93,11 +91,9 @@ export const BlockEditorSurface = ({
       className={cx(
         'block-editor',
         readOnly && 'block-editor--readonly',
-        blockSelection.selecting && 'block-editor--selecting',
         className,
       )}
       onBlur={onRootBlur}
-      onClickCapture={blockSelection.onClickCapture}
       onFocus={() => {
         model.focusedRef.current = true
       }}
@@ -109,10 +105,6 @@ export const BlockEditorSurface = ({
         }
       }}
       onContextMenu={onRootContextMenu}
-      onPointerCancel={blockSelection.onPointerCancel}
-      onPointerDown={blockSelection.onPointerDown}
-      onPointerMove={blockSelection.onPointerMove}
-      onPointerUp={blockSelection.onPointerUp}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && model.selectedBlockIds.length) {
           event.preventDefault()
@@ -166,13 +158,6 @@ export const BlockEditorSurface = ({
           onDelete={model.deleteSelectedBlocks}
           onParagraph={model.convertSelectedToParagraph}
           onFormat={model.formatSelected}
-        />
-      ) : null}
-      {blockSelection.selectionRect ? (
-        <div
-          aria-hidden="true"
-          className="block-editor__selection-rect"
-          style={blockSelection.selectionRect}
         />
       ) : null}
       <div className="block-editor__document">

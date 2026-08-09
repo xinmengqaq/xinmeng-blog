@@ -300,54 +300,6 @@ describe('BlockMarkdownEditor', () => {
     expect(handles[1]).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('鼠标拖框应一次选中覆盖范围内的多个块', () => {
-    const { container } = render(
-      <BlockMarkdownEditor
-        value={'第一段\n\n第二段\n\n第三段'}
-        onChange={vi.fn()}
-      />,
-    )
-    const blocks = Array.from(
-      container.querySelectorAll<HTMLElement>('.block-editor__block'),
-    )
-    blocks.forEach((block, index) => {
-      vi.spyOn(block, 'getBoundingClientRect').mockReturnValue({
-        bottom: index * 40 + 30,
-        height: 30,
-        left: 0,
-        right: 400,
-        toJSON: () => ({}),
-        top: index * 40,
-        width: 400,
-        x: 0,
-        y: index * 40,
-      } as DOMRect)
-    })
-    const documentSurface = container.querySelector<HTMLElement>(
-      '.block-editor__document',
-    )!
-
-    fireEvent.pointerDown(documentSurface, {
-      button: 0,
-      clientX: 8,
-      clientY: 5,
-      pointerId: 1,
-    })
-    fireEvent.pointerMove(documentSurface, {
-      clientX: 380,
-      clientY: 105,
-      pointerId: 1,
-    })
-    fireEvent.pointerUp(documentSurface, {
-      clientX: 380,
-      clientY: 105,
-      pointerId: 1,
-    })
-
-    expect(screen.getByText('已选择 3 个块')).toBeInTheDocument()
-    expect(container.querySelectorAll('.is-multi-selected')).toHaveLength(3)
-  })
-
   it('Shift 点击块柄应从选择锚点连续选择', () => {
     const { container } = render(
       <BlockMarkdownEditor

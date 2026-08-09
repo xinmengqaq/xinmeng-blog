@@ -12,7 +12,7 @@
 
     <artifactId>springboot-admin</artifactId>
 
-    <dependencies>
+<dependencies>
         <!-- springboot-common：管理员功能模块复用统一返回、异常、JWT、密码加密、分页等公共能力 -->
         <dependency>
             <groupId>com.xinmengqaq</groupId>

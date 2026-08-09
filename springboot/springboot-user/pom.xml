@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.xinmengqaq</groupId>
+        <artifactId>springboot</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>springboot-user</artifactId>
+
+    <dependencies>
+        <!-- springboot-common：用户模块复用统一返回、异常、JWT、密码加密、分页等公共能力 -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Spring Security：后续用户认证过滤链、认证管理器和授权能力的基础依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <!-- Spring OAuth2 Resource Server：后续用户认证过滤链、认证管理器和授权能力的基础依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

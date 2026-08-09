@@ -133,14 +133,6 @@ export const useBlockEditorModel = (
     setSelectedBlockIds([])
   }, [])
 
-  const setBlockSelection = useCallback((blockIds: string[]) => {
-    const validIds = blockIds.filter((blockId) =>
-      blocksRef.current.some((block) => block.id === blockId),
-    )
-    selectionAnchorRef.current = validIds[0] ?? null
-    setSelectedBlockIds(validIds)
-  }, [])
-
   const deleteSelectedBlocks = useCallback(() => {
     const selected = selectedBlockIds
     if (!selected.length) return
@@ -316,7 +308,6 @@ export const useBlockEditorModel = (
     setShortcutDrawerOpen,
     selectedBlockIds,
     selectBlock,
-    setBlockSelection,
     clearBlockSelection,
     deleteSelectedBlocks,
     convertSelectedToParagraph,

@@ -37,6 +37,18 @@
             <artifactId>springboot-site</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- springboot-user：启动模块依赖用户功能模块，扫描用户 Controller、Service、Mapper -->
+        <dependency>
+            <groupId>com.xinmengqaq</groupId>
+            <artifactId>springboot-user</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Spring MVC 测试支持：提供 @AutoConfigureMockMvc 等 Web 集成测试注解 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

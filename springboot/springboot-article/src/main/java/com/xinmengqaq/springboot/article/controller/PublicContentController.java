@@ -12,6 +12,7 @@ import com.xinmengqaq.springboot.article.vo.PublicCategoryVO;
 import com.xinmengqaq.springboot.article.vo.PublicTagVO;
 import com.xinmengqaq.springboot.common.PageResult;
 import com.xinmengqaq.springboot.common.Result;
+import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -154,7 +155,7 @@ public class PublicContentController {
 
     @ExceptionHandler(ArticleLikeRateLimitException.class)
     public ResponseEntity<Result> handleArticleLikeRateLimit(ArticleLikeRateLimitException exception) {
-        Result result = Result.error("429", exception.getMessage());
+        Result result = Result.error(ErrorCode.TOO_MANY_REQUESTS, exception.getMessage());
         result.setData(Map.of("retryAfterSeconds", exception.getRetryAfterSeconds()));
         return ResponseEntity.status(429).body(result);
     }

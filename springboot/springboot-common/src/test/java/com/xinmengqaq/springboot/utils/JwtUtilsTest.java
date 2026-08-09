@@ -25,6 +25,7 @@ class JwtUtilsTest {
         Claims claims = jwtUtils.parseToken(token);
 
         assertThat(claims.getSubject()).isEqualTo("3000000000");
+        assertThat(jwtUtils.getTokenType(token)).isEqualTo("admin");
         assertThat(jwtUtils.getAdminId(token)).isEqualTo(adminId);
         assertThat(jwtUtils.getUsername(token)).isEqualTo("admin");
     }
@@ -46,6 +47,35 @@ class JwtUtilsTest {
 
         assertThatThrownBy(() -> jwtUtils.parseToken("invalid-token"))
                 .isInstanceOf(JwtException.class);
+    }
+
+    @Test
+    @DisplayName("用户 Token 包含用户身份、密码版本和唯一 jti")
+    void createUserTokenContainsRequiredClaims() {
+        JwtUtils jwtUtils = newJwtUtils(3_600L, 0L);
+
+        String firstToken = jwtUtils.createUserToken(12L, 3);
+        String secondToken = jwtUtils.createUserToken(12L, 3);
+        Claims claims = jwtUtils.parseToken(firstToken);
+
+        assertThat(claims.getId()).isNotBlank();
+        assertThat(claims.getSubject()).isEqualTo("12");
+        assertThat(claims.get("tokenType", String.class)).isEqualTo("user");
+        assertThat(claims.get("passwordVersion", Integer.class)).isEqualTo(3);
+        assertThat(claims.getExpiration().getTime() - claims.getIssuedAt().getTime()).isEqualTo(3_600_000L);
+        assertThat(jwtUtils.parseToken(secondToken).getId()).isNotEqualTo(claims.getId());
+    }
+
+    @Test
+    @DisplayName("记住我用户 Token 使用调用方指定的十四天有效期")
+    void createUserTokenUsesRequestedRememberMeLifetime() {
+        JwtUtils jwtUtils = newJwtUtils(3_600L, 0L);
+
+        String token = jwtUtils.createUserToken(12L, 3, 1_209_600L);
+        Claims claims = jwtUtils.parseToken(token);
+
+        assertThat(claims.getExpiration().getTime() - claims.getIssuedAt().getTime())
+                .isEqualTo(1_209_600_000L);
     }
 
     private JwtUtils newJwtUtils(Long expireSeconds, Long clockSkewSeconds) {

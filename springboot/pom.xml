@@ -25,6 +25,7 @@
         <module>springboot-web</module>
         <module>springboot-article</module>
         <module>springboot-site</module>
+        <module>springboot-user</module>
     </modules>
 
     <properties>
@@ -176,6 +177,11 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
+        </dependency>
+        <!-- Spring Boot Mail Starter：提供发送邮件的能力 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
     </dependencies>

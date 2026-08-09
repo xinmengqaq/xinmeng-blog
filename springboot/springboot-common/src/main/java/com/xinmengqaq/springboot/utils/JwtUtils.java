@@ -21,7 +21,7 @@ public class JwtUtils {
     private JwtProperties jwtProperties;
 
     /**
-     * 创建 JWT 令牌。
+     * 创建管理员 JWT 令牌。
      * @param adminId 管理员ID，作为令牌的主题
      * @param username 用户名，作为令牌的一个声明
      * @param passwordVersion 密码版本号，用于验证用户密码是否已更新
@@ -47,6 +47,8 @@ public class JwtUtils {
                 .id(UUID.randomUUID().toString())
                 // 设置 Token 主体，这里使用管理员ID。
                 .subject(String.valueOf(adminId))
+                // 标记管理员身份，避免普通用户 Token 被后台接口接受。
+                .claim("tokenType", "admin")
                 // 写入用户名声明，后续可从 Token 中直接读取用户名。
                 .claim("username", username)
                 // 写入密码版本号声明，用于修改密码后让旧 Token 失效。
@@ -58,6 +60,25 @@ public class JwtUtils {
                 // 使用配置密钥和 HS256 算法对 Token 签名。
                 .signWith(getSecretKey(), Jwts.SIG.HS256)
                 // 生成最终的 JWT 字符串。
+                .compact();
+    }
+
+    /**
+     * 创建用户 JWT 令牌。
+     * @param userId 用户ID，作为令牌的主题
+     * @param passwordVersion 密码版本号，用于验证用户密码是否已更新
+     * @return JWT 令牌字符串，可用于后续的身份验证
+     */
+    public String createUserToken(Long userId, Integer passwordVersion) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(String.valueOf(userId))                 // subject = userId
+                .claim("tokenType", "user")                      // 用户身份类型
+                .claim("passwordVersion", passwordVersion)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(jwtProperties.getExpireSeconds())))
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -112,6 +133,16 @@ public class JwtUtils {
     }
 
     /**
+     * 从 Token 中获取身份类型。
+     *
+     * @param token JWT 令牌字符串
+     * @return 身份类型
+     */
+    public String getTokenType(String token) {
+        return parseToken(token).get("tokenType", String.class);
+    }
+
+    /**
      * 从 Token 中获取用户名。
      *
      * @param token JWT 令牌字符串
@@ -132,5 +163,24 @@ public class JwtUtils {
         // 使用解码后的字节数组生成 HMAC SHA 签名密钥。
         return Keys.hmacShaKeyFor(keyBytes);
     }
-}
 
+    /**
+     * 创建用户 JWT 令牌, 这是自定义的过期时间
+     * @param userId 用户ID，作为令牌的主题
+     * @param passwordVersion 密码版本号，用于验证用户密码是否已更新
+     * @param expireSeconds 过期时间数，单位秒
+     * @return JWT 令牌字符串，可用于后续的身份验证
+     */
+    public String createUserToken(Long userId, Integer passwordVersion, long expireSeconds) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(String.valueOf(userId))
+                .claim("tokenType", "user")
+                .claim("passwordVersion", passwordVersion)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(expireSeconds)))
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
+                .compact();
+    }
+}

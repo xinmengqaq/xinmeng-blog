@@ -1,5 +1,13 @@
-import sys
+from enum import StrEnum
 
-from app.modules.file.image import enums as _enums
 
-sys.modules[__name__] = _enums
+class ContentImageCleanupResult(StrEnum):
+
+    # 删除成功
+    DELETED = "deleted"
+    # 已删除
+    ALREADY_ABSENT = "already_absent"
+    # 仍在使用
+    RETAINED_IN_USE = "retained_in_use"
+    # 外部忽略
+    EXTERNAL_IGNORED = "external_ignored"

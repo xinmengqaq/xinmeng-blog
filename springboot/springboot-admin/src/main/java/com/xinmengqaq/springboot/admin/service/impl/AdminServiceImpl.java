@@ -2,11 +2,9 @@ package com.xinmengqaq.springboot.admin.service.impl;
 
 
 import cn.hutool.captcha.LineCaptcha;
-
 import com.github.benmanes.caffeine.cache.Cache;
-
-import com.xinmengqaq.springboot.admin.config.AdminCaptchaFactory;
-import com.xinmengqaq.springboot.admin.vo.AdminCaptchaVO;
+import com.xinmengqaq.springboot.admin.aop.VerifyAdminCaptcha;
+import com.xinmengqaq.springboot.admin.config.AdminCaptchaConstants;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.admin.dto.AdminLoginDTO;
@@ -15,14 +13,15 @@ import com.xinmengqaq.springboot.admin.dto.AdminProfileUpdateDTO;
 import com.xinmengqaq.springboot.admin.entity.Admin;
 import com.xinmengqaq.springboot.admin.mapper.AdminMapper;
 import com.xinmengqaq.springboot.admin.service.AdminService;
+import com.xinmengqaq.springboot.config.captcha.CaptchaFactory;
 import com.xinmengqaq.springboot.utils.JwtUtils;
+import com.xinmengqaq.springboot.admin.vo.AdminCaptchaVO;
 import com.xinmengqaq.springboot.admin.vo.AdminVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.Locale;
 import java.util.UUID;
@@ -48,18 +47,19 @@ public class AdminServiceImpl implements AdminService {
     @Resource
     private JwtUtils jwtUtils;
 
-    @Resource(name = "adminCaptchaCache")
+    @Resource(name = "captchaCache")
     private Cache<String, String> captchaCache;
 
-    @Resource(name = "adminCaptchaIssueRateCache")
+    @Resource(name = "captchaIssueRateCache")
     private Cache<String, AtomicInteger> issueRateCache;
 
-    @Resource(name = "adminCaptchaFactory")
-    private AdminCaptchaFactory captchaFactory;
+    @Resource
+    private CaptchaFactory captchaFactory;
 
 
 
     @Override
+    @VerifyAdminCaptcha
      /**
      * 管理员登录校验
      * @param adminLoginDTO 包含用户名和密码的登录数据传输对象
@@ -67,16 +67,6 @@ public class AdminServiceImpl implements AdminService {
      * @throws BusinessException 当用户名或密码错误时抛出业务异常
      */
     public AdminVO login(AdminLoginDTO adminLoginDTO) {
-
-        boolean  captchaPassed = consume(adminLoginDTO.getCaptchaID(), adminLoginDTO.getCaptchaCode());
-
-        if(!captchaPassed){
-            log.warn("管理员登录失败，验证码错误或已过期");
-            throw new BusinessException(
-                    ErrorCode.PARAM_ERROR,
-                    "验证码错误或已过期，请重新输入"
-            );
-        }
         // 从登录数据传输对象中获取用户名
         String username = adminLoginDTO.getUsername();
 
@@ -238,31 +228,25 @@ public class AdminServiceImpl implements AdminService {
      */
     @Override
     public AdminCaptchaVO createCaptcha(String clientIp) {
-        AtomicInteger IpCountCounter = issueRateCache.get(clientIp, key -> new AtomicInteger());
-        //incrementAndGet()方法会返回当前值，所以需要判断是否大于20次
-        if(IpCountCounter.incrementAndGet() > 20){
+        String rateKey = AdminCaptchaConstants.CACHE_KEY_PREFIX + clientIp;
+        AtomicInteger ipCount = issueRateCache.get(rateKey, key -> new AtomicInteger());
+        if (ipCount.incrementAndGet() > AdminCaptchaConstants.ISSUE_LIMIT_PER_MINUTE) {
             log.warn("clientIp={},为这个IP创建验证码，超过20次，1分钟内请稍后再试", clientIp);
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码发放率超过20次，1分钟内请稍后再试");
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "验证码发放率超过20次，1分钟内请稍后再试");
         }
 
-        log.info("clientIp={},为这个IP创建验证码", clientIp);
-
         LineCaptcha captcha = captchaFactory.create();
-        String answer = captcha.getCode();
         String captchaId = UUID.randomUUID().toString();
-
-        captchaCache.put(captchaId,answer.toUpperCase(Locale.ROOT));
-
-        //返回base64字符图片
-        String imageBase64 = captcha.getImageBase64();
+        captchaCache.put(
+                AdminCaptchaConstants.CACHE_KEY_PREFIX + captchaId,
+                captcha.getCode().toUpperCase(Locale.ROOT)
+        );
 
         log.info("验证码创建成功，clientIp={}, captchaId={}", clientIp, captchaId);
-
         return AdminCaptchaVO.builder()
                 .captchaId(captchaId)
-                .imageBase64(imageBase64)
+                .imageBase64(captcha.getImageBase64())
                 .build();
-
     }
 
     /**
@@ -287,30 +271,6 @@ public class AdminServiceImpl implements AdminService {
         Admin admin = adminMapper.selectByIdForUpdate(adminId);
 
         return validateAdmin(adminId, admin);
-    }
-
-    /**
-     * 消费验证码
-     * @param captchaId 验证码ID
-     * @param captchaCode 验证码
-     * @return 是否验证成功
-     */
-    public boolean consume(String captchaId, String captchaCode) {
-
-        if (captchaId == null || captchaCode == null) {
-            log.warn("验证码不能为空");
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证码不能为空");
-        }
-
-        String expected = captchaCache.asMap().remove(captchaId);
-        if (expected == null) {
-            log.warn("验证码答案获取失败，验证码ID={}", captchaId);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "验证码答案获取失败");
-        }
-
-        String actual = captchaCode.strip().toUpperCase(Locale.ROOT);
-
-        return actual.length() == 4 && expected.equals(actual);
     }
 
     private Admin validateAdmin(Long adminId, Admin admin) {

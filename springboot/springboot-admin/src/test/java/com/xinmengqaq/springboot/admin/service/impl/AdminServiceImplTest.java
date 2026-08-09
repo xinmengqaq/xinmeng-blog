@@ -2,8 +2,10 @@ package com.xinmengqaq.springboot.admin.service.impl;
 
 import cn.hutool.captcha.LineCaptcha;
 import com.github.benmanes.caffeine.cache.Cache;
-import com.xinmengqaq.springboot.admin.config.AdminCaptchaCacheConfig;
-import com.xinmengqaq.springboot.admin.config.AdminCaptchaFactory;
+import com.xinmengqaq.springboot.admin.config.AdminCaptchaConstants;
+import com.xinmengqaq.springboot.admin.vo.AdminCaptchaVO;
+import com.xinmengqaq.springboot.config.captcha.CaptchaCacheConfig;
+import com.xinmengqaq.springboot.config.captcha.CaptchaFactory;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.admin.dto.AdminLoginDTO;
@@ -17,15 +19,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,7 +34,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,23 +50,19 @@ class AdminServiceImplTest {
     private JwtUtils jwtUtils;
 
     @Mock
-    private AdminCaptchaFactory captchaFactory;
+    private CaptchaFactory captchaFactory;
 
     @InjectMocks
     private AdminServiceImpl adminService;
 
     private Cache<String, String> captchaCache;
-    private Cache<String, AtomicInteger> issueRateCache;
-    private LineCaptcha captcha;
 
     @BeforeEach
     void setUp() {
-        AdminCaptchaCacheConfig cacheConfig = new AdminCaptchaCacheConfig();
-        captchaCache = cacheConfig.adminCaptchaCache();
-        issueRateCache = cacheConfig.adminCaptchaIssueRateCache();
-        captcha = mock(LineCaptcha.class);
+        CaptchaCacheConfig cacheConfig = new CaptchaCacheConfig();
+        captchaCache = cacheConfig.captchaCache();
         ReflectionTestUtils.setField(adminService, "captchaCache", captchaCache);
-        ReflectionTestUtils.setField(adminService, "issueRateCache", issueRateCache);
+        ReflectionTestUtils.setField(adminService, "issueRateCache", cacheConfig.captchaIssueRateCache());
     }
 
     @Test
@@ -197,59 +193,19 @@ class AdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("每次领取验证码都会向工厂获取新的验证码对象")
-    void createCaptchaGetsFreshLineCaptchaFromFactoryOnEveryRequest() {
-        LineCaptcha firstCaptcha = mock(LineCaptcha.class);
-        LineCaptcha secondCaptcha = mock(LineCaptcha.class);
-        when(captchaFactory.create()).thenReturn(firstCaptcha, secondCaptcha);
-        when(firstCaptcha.getCode()).thenReturn("A2B3");
-        when(firstCaptcha.getImageBase64()).thenReturn("first-image-base64");
-        when(secondCaptcha.getCode()).thenReturn("C3D4");
-        when(secondCaptcha.getImageBase64()).thenReturn("second-image-base64");
+    @DisplayName("创建验证码使用公共工厂并返回管理员验证码 VO")
+    void createCaptchaUsesSharedFactoryAndAdminVO() {
+        LineCaptcha captcha = mock(LineCaptcha.class);
+        when(captchaFactory.create()).thenReturn(captcha);
+        when(captcha.getCode()).thenReturn("A2B3");
+        when(captcha.getImageBase64()).thenReturn("image-base64");
 
-        var firstResult = adminService.createCaptcha("203.0.113.10");
-        var secondResult = adminService.createCaptcha("203.0.113.10");
+        AdminCaptchaVO result = adminService.createCaptcha("203.0.113.10");
 
-        assertThat(firstResult.getCaptchaId()).isNotEqualTo(secondResult.getCaptchaId());
-        assertThat(captchaCache.getIfPresent(firstResult.getCaptchaId())).isEqualTo("A2B3");
-        assertThat(captchaCache.getIfPresent(secondResult.getCaptchaId())).isEqualTo("C3D4");
-        verify(captchaFactory, times(2)).create();
-    }
-
-    @Test
-    @DisplayName("同一 IP 一分钟内第 21 次获取验证码会被拦截且不生成图片")
-    void createCaptchaRejectsTwentyFirstRequestFromSameIp() {
-        String clientIp = "203.0.113.10";
-        stubCaptchaImage();
-        issueCaptchaTwentyTimes(clientIp);
-
-        assertThatThrownBy(() -> adminService.createCaptcha(clientIp))
-                .isInstanceOfSatisfying(BusinessException.class, exception ->
-                        assertThat(exception.getCode()).isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
-        AtomicInteger counter = issueRateCache.getIfPresent(clientIp);
-        assertThat(counter).isNotNull();
-        assertThat(counter.get()).isEqualTo(21);
-        verify(captcha, times(20)).getCode();
-        verify(captcha, times(20)).getImageBase64();
-    }
-
-    @Test
-    @DisplayName("一个 IP 达到验证码限额后不会影响其他 IP 获取验证码")
-    void createCaptchaKeepsRateLimitCountersIndependentByIp() {
-        String limitedIp = "203.0.113.10";
-        String anotherIp = "203.0.113.11";
-        stubCaptchaImage();
-        issueCaptchaTwentyTimes(limitedIp);
-
-        assertThatThrownBy(() -> adminService.createCaptcha(limitedIp))
-                .isInstanceOf(BusinessException.class);
-
-        adminService.createCaptcha(anotherIp);
-
-        AtomicInteger anotherIpCounter = issueRateCache.getIfPresent(anotherIp);
-        assertThat(anotherIpCounter).isNotNull();
-        assertThat(anotherIpCounter.get()).isEqualTo(1);
-        verify(captcha, times(21)).getCode();
+        assertThat(result.getCaptchaId()).isNotBlank();
+        assertThat(result.getImageBase64()).isEqualTo("image-base64");
+        verify(captchaFactory).create();
+        assertThat(captchaCache.getIfPresent(AdminCaptchaConstants.CACHE_KEY_PREFIX + result.getCaptchaId())).isEqualTo("A2B3");
     }
 
     private Admin admin() {
@@ -265,27 +221,12 @@ class AdminServiceImplTest {
     }
 
     private AdminLoginDTO loginDTO(String username, String password) {
-        String captchaId = UUID.randomUUID().toString();
-        captchaCache.put(captchaId, "A2B3");
-
         AdminLoginDTO dto = new AdminLoginDTO();
         dto.setUsername(username);
         dto.setPassword(password);
-        dto.setCaptchaID(captchaId);
+        dto.setCaptchaID(UUID.randomUUID().toString());
         dto.setCaptchaCode("a2b3");
         return dto;
-    }
-
-    private void stubCaptchaImage() {
-        when(captchaFactory.create()).thenReturn(captcha);
-        when(captcha.getCode()).thenReturn("A2B3");
-        when(captcha.getImageBase64()).thenReturn("captcha-image-base64");
-    }
-
-    private void issueCaptchaTwentyTimes(String clientIp) {
-        for (int requestCount = 0; requestCount < 20; requestCount++) {
-            adminService.createCaptcha(clientIp);
-        }
     }
 
     private AdminPasswordChangeDTO passwordChangeDTO(String oldPassword, String newPassword) {

@@ -58,6 +58,10 @@ public class AuthInterceptor implements HandlerInterceptor {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "未登录");
         }
 
+        if (!"admin".equals(jwtUtils.getTokenType(token))) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "未登录");
+        }
+
         // 从token中解析管理员ID和密码版本
         Long adminId = jwtUtils.getAdminId(token);
         Integer tokenPasswordVersion = jwtUtils.getPasswordVersion(token);

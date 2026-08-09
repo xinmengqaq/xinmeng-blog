@@ -1,6 +1,5 @@
 package com.xinmengqaq.springboot.admin.vo;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
@@ -10,8 +9,7 @@ import lombok.Data;
 @Builder
 public class AdminCaptchaVO {
 
-    private String captchaId; // 验证码 ID
+    private String captchaId;
 
-    private String imageBase64; // 验证码图片 Base64 编码
-
+    private String imageBase64;
 }

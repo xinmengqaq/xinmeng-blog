@@ -2,6 +2,7 @@ package com.xinmengqaq.springboot.interceptor;
 
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
+import com.xinmengqaq.springboot.config.JwtProperties;
 import com.xinmengqaq.springboot.admin.entity.Admin;
 import com.xinmengqaq.springboot.admin.mapper.AdminMapper;
 import com.xinmengqaq.springboot.utils.JwtUtils;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,7 +64,7 @@ class AuthInterceptorTest {
     @DisplayName("Token 非法时交给 JWT 异常链路处理")
     void testPreHandleRejectsInvalidToken() {
         MockHttpServletRequest request = authenticatedRequest("bad-token");
-        when(jwtUtils.getAdminId("bad-token")).thenThrow(new MalformedJwtException("bad token"));
+        when(jwtUtils.getTokenType("bad-token")).thenThrow(new MalformedJwtException("bad token"));
 
         assertThatThrownBy(() -> authInterceptor.preHandle(request, response, new Object()))
                 .isInstanceOf(MalformedJwtException.class);
@@ -72,6 +74,7 @@ class AuthInterceptorTest {
     @DisplayName("Token 对应管理员不存在时会拦截")
     void testPreHandleRejectsMissingAdmin() {
         MockHttpServletRequest request = authenticatedRequest("valid-token");
+        when(jwtUtils.getTokenType("valid-token")).thenReturn("admin");
         when(jwtUtils.getAdminId("valid-token")).thenReturn(1L);
         when(jwtUtils.getPasswordVersion("valid-token")).thenReturn(2);
         when(adminMapper.selectById(1L)).thenReturn(null);
@@ -87,6 +90,7 @@ class AuthInterceptorTest {
     @DisplayName("Token 密码版本和数据库不一致时会拦截")
     void testPreHandleRejectsPasswordVersionMismatch() {
         MockHttpServletRequest request = authenticatedRequest("old-token");
+        when(jwtUtils.getTokenType("old-token")).thenReturn("admin");
         when(jwtUtils.getAdminId("old-token")).thenReturn(1L);
         when(jwtUtils.getPasswordVersion("old-token")).thenReturn(1);
         when(adminMapper.selectById(1L)).thenReturn(admin(2));
@@ -102,6 +106,7 @@ class AuthInterceptorTest {
     @DisplayName("Token 有效且密码版本一致时放行并写入当前管理员ID")
     void testPreHandlePassesAndSetsAdminIdWhenTokenValid() {
         MockHttpServletRequest request = authenticatedRequest("valid-token");
+        when(jwtUtils.getTokenType("valid-token")).thenReturn("admin");
         when(jwtUtils.getAdminId("valid-token")).thenReturn(1L);
         when(jwtUtils.getPasswordVersion("valid-token")).thenReturn(2);
         when(adminMapper.selectById(1L)).thenReturn(admin(2));
@@ -110,6 +115,19 @@ class AuthInterceptorTest {
 
         assertThat(result).isTrue();
         assertThat(request.getAttribute("adminId")).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("普通用户 Token 不能被管理员拦截器当作管理员凭证")
+    void testPreHandleRejectsUserTokenAtAdminBoundary() {
+        JwtUtils realJwtUtils = newJwtUtils();
+        ReflectionTestUtils.setField(authInterceptor, "jwtUtils", realJwtUtils);
+        String userToken = realJwtUtils.createUserToken(1L, 2);
+        MockHttpServletRequest request = authenticatedRequest(userToken);
+
+        assertThatThrownBy(() -> authInterceptor.preHandle(request, response, new Object()))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        assertThat(exception.getCode()).isEqualTo(ErrorCode.UNAUTHORIZED.getCode()));
     }
 
     private MockHttpServletRequest authenticatedRequest(String token) {
@@ -125,5 +143,15 @@ class AuthInterceptorTest {
         admin.setPasswordVersion(passwordVersion);
         return admin;
     }
-}
 
+    private JwtUtils newJwtUtils() {
+        JwtProperties jwtProperties = new JwtProperties();
+        jwtProperties.setSecret("eGlubWVuZ3FhcS1ibG9nLXNwcmluZ2Jvb3Q0LTIwMjY=");
+        jwtProperties.setExpireSeconds(3_600L);
+        jwtProperties.setClockSkewSeconds(0L);
+
+        JwtUtils realJwtUtils = new JwtUtils();
+        ReflectionTestUtils.setField(realJwtUtils, "jwtProperties", jwtProperties);
+        return realJwtUtils;
+    }
+}
