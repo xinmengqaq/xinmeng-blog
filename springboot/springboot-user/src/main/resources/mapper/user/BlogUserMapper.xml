@@ -26,14 +26,17 @@
         FOR UPDATE
     </select>
 
-    <!--删除过期的待激活用户-->
+    <!--有限批次锁定并删除到期的待删除用户，多实例执行时跳过其他事务已锁定记录-->
     <delete id="deleteExpiredPendingUsers">
         DELETE FROM blog_user
         WHERE id IN (
-        SELECT id FROM blog_user
-        WHERE status = 'pending_deletion'
-        AND delete_at &lt;= #{now}
-        LIMIT #{limit}
+            SELECT id
+            FROM blog_user
+            WHERE status = 'pending_deletion'
+              AND delete_at &lt;= #{now}
+            ORDER BY delete_at, id
+            LIMIT #{limit}
+            FOR UPDATE SKIP LOCKED
         )
     </delete>
 

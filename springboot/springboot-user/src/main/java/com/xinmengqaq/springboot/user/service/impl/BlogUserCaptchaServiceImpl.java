@@ -5,17 +5,17 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.config.captcha.CaptchaFactory;
+import com.xinmengqaq.springboot.user.aop.BlogUserAction;
+import com.xinmengqaq.springboot.user.aop.BlogUserOperation;
 import com.xinmengqaq.springboot.user.service.BlogUserCaptchaService;
 import com.xinmengqaq.springboot.user.vo.CaptchaVO;
 import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 @Service
 public class BlogUserCaptchaServiceImpl implements BlogUserCaptchaService {
 
@@ -34,11 +34,11 @@ public class BlogUserCaptchaServiceImpl implements BlogUserCaptchaService {
 
 
     @Override
+    @BlogUserOperation(BlogUserAction.ISSUE_CAPTCHA)
     public CaptchaVO CreateCaptcha(String clientIp) {
         String rateKey = CACHE_KEY_PREFIX + clientIp;
         AtomicInteger counter = issueRateCache.get(rateKey, key -> new AtomicInteger());
         if (counter.incrementAndGet() > ISSUE_LIMIT_PER_MINUTE) {
-            log.warn("用户验证码发放超限，clientIp={}", clientIp);
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS, "验证码发放过于频繁，1分钟内请稍后再试");
         }
 
@@ -46,7 +46,6 @@ public class BlogUserCaptchaServiceImpl implements BlogUserCaptchaService {
         String captchaId = UUID.randomUUID().toString();
         captchaCache.put(CACHE_KEY_PREFIX + captchaId, captcha.getCode().toUpperCase(Locale.ROOT));
 
-        log.info("用户验证码创建成功，clientIp={}", clientIp);
         return CaptchaVO.builder()
                 .captchaId(captchaId)
                 .imageBase64(captcha.getImageBase64())

@@ -2,17 +2,21 @@ package com.xinmengqaq.springboot.user.service.impl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.config.JwtProperties;
 import com.xinmengqaq.springboot.user.config.BlogUserDetails;
 import com.xinmengqaq.springboot.user.dto.BlogUserLoginDTO;
 import com.xinmengqaq.springboot.user.dto.BlogUserRegisterDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserPasswordResetDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserRestoreDTO;
 import com.xinmengqaq.springboot.user.dto.EmailCodeSendDTO;
 import com.xinmengqaq.springboot.user.entity.BlogUser;
 import com.xinmengqaq.springboot.user.enums.BlogUserStatus;
 import com.xinmengqaq.springboot.user.enums.EmailCodePurpose;
 import com.xinmengqaq.springboot.user.mapper.BlogUserMapper;
+import com.xinmengqaq.springboot.user.service.BlogUserEmailService;
 import com.xinmengqaq.springboot.user.vo.BlogUserVO;
 import com.xinmengqaq.springboot.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -32,10 +36,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -50,7 +56,7 @@ class BlogUserAuthServiceImplTest {
     private BlogUserMapper blogUserMapper;
 
     @Mock
-    private BlogUserEmailServiceImpl emailService;
+    private BlogUserEmailService emailService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -325,6 +331,70 @@ class BlogUserAuthServiceImplTest {
         verifyNoInteractions(blogUserMapper);
     }
 
+    @Test
+    @DisplayName("找回密码发码对不存在邮箱返回相同结果且不发送邮件")
+    void sendPasswordResetCodeDoesNotRevealMissingEmail() {
+        when(blogUserMapper.selectCount(any())).thenReturn(0L);
+
+        authService.sendPasswordResetCode(emailCodeSendDTO(" Missing@Example.COM "), "203.0.113.10");
+
+        verify(emailService, never()).send(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("重置密码会按邮箱锁定用户并同时递增凭证版本和乐观锁版本")
+    void resetPasswordLocksUserAndInvalidatesExistingTokens() {
+        BlogUser user = user(12L, "reader@example.com", BlogUserStatus.ENABLED, 3);
+        user.setVersion(7);
+        when(blogUserMapper.selectByEmailForUpdate("reader@example.com")).thenReturn(user);
+        when(emailService.consume(EmailCodePurpose.RESET_PASSWORD, "reader@example.com", "381642"))
+                .thenReturn(true);
+        when(passwordEncoder.matches("NewPassword456!", user.getPassword())).thenReturn(false);
+        when(passwordEncoder.encode("NewPassword456!")).thenReturn("encoded-new-password");
+        when(blogUserMapper.updateById(user)).thenReturn(1);
+
+        authService.resetPassword(passwordResetDTO());
+
+        assertThat(user.getPassword()).isEqualTo("encoded-new-password");
+        assertThat(user.getPasswordVersion()).isEqualTo(4);
+        assertThat(user.getVersion()).isEqualTo(7);
+        verify(blogUserMapper).selectByEmailForUpdate("reader@example.com");
+        verify(blogUserMapper).updateById(user);
+    }
+
+    @Test
+    @DisplayName("恢复账号会按邮箱锁定待删除用户并清空删除时间")
+    void restoreAccountLocksPendingUserAndInvalidatesOldTokens() {
+        BlogUser user = user(12L, "reader@example.com", BlogUserStatus.PENDING_DELETION, 3);
+        user.setVersion(7);
+        user.setDeleteAt(OffsetDateTime.now().plusDays(1));
+        when(blogUserMapper.selectByEmailForUpdate("reader@example.com")).thenReturn(user);
+        when(passwordEncoder.matches("StrongPassword123!", user.getPassword())).thenReturn(true);
+        when(blogUserMapper.updateById(user)).thenReturn(1);
+        when(blogUserMapper.update(isNull(), any(UpdateWrapper.class))).thenReturn(1);
+
+        authService.restoreAccount(restoreDTO());
+
+        assertThat(user.getStatus()).isEqualTo(BlogUserStatus.ENABLED.getValue());
+        assertThat(user.getDeleteAt()).isNull();
+        assertThat(user.getPasswordVersion()).isEqualTo(4);
+        verify(blogUserMapper).selectByEmailForUpdate("reader@example.com");
+    }
+
+    @Test
+    @DisplayName("超过恢复期限的账号按不存在处理且不能更新")
+    void restoreAccountRejectsExpiredPendingUser() {
+        BlogUser user = user(12L, "reader@example.com", BlogUserStatus.PENDING_DELETION, 3);
+        user.setDeleteAt(OffsetDateTime.now().minusSeconds(1));
+        when(blogUserMapper.selectByEmailForUpdate("reader@example.com")).thenReturn(user);
+
+        assertThatThrownBy(() -> authService.restoreAccount(restoreDTO()))
+                .isInstanceOfSatisfying(BusinessException.class, exception ->
+                        assertThat(exception.getCode()).isEqualTo(ErrorCode.NOT_FOUND.getCode()));
+
+        verify(blogUserMapper, never()).updateById(any(BlogUser.class));
+    }
+
     private EmailCodeSendDTO emailCodeSendDTO(String email) {
         EmailCodeSendDTO dto = new EmailCodeSendDTO();
         dto.setEmail(email);
@@ -347,6 +417,21 @@ class BlogUserAuthServiceImplTest {
         dto.setEmail(email);
         dto.setPassword(password);
         dto.setRememberMe(rememberMe);
+        return dto;
+    }
+
+    private BlogUserPasswordResetDTO passwordResetDTO() {
+        BlogUserPasswordResetDTO dto = new BlogUserPasswordResetDTO();
+        dto.setEmail(" Reader@Example.COM ");
+        dto.setEmailCode("381642");
+        dto.setNewPassword("NewPassword456!");
+        return dto;
+    }
+
+    private BlogUserRestoreDTO restoreDTO() {
+        BlogUserRestoreDTO dto = new BlogUserRestoreDTO();
+        dto.setEmail(" Reader@Example.COM ");
+        dto.setPassword("StrongPassword123!");
         return dto;
     }
 

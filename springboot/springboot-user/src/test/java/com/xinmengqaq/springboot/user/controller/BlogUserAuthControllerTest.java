@@ -6,6 +6,8 @@ import com.xinmengqaq.springboot.common.exception.GlobalExceptionHandler;
 import com.xinmengqaq.springboot.user.dto.BlogUserLoginDTO;
 import com.xinmengqaq.springboot.user.dto.BlogUserRegisterDTO;
 import com.xinmengqaq.springboot.user.dto.EmailCodeSendDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserPasswordResetDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserRestoreDTO;
 import com.xinmengqaq.springboot.user.service.BlogUserAuthService;
 import com.xinmengqaq.springboot.user.service.BlogUserCaptchaService;
 import com.xinmengqaq.springboot.user.vo.BlogUserVO;
@@ -220,6 +222,59 @@ class BlogUserAuthControllerTest {
                 .andExpect(jsonPath("$.msg").value("未登录或登录已过期"));
 
         verifyNoInteractions(authService);
+    }
+
+    @Test
+    @DisplayName("重置密码发码接口返回不泄露邮箱是否存在的固定消息")
+    void sendPasswordResetCodeReturnsStableMessage() throws Exception {
+        mockMvc.perform(post("/api/user/password/reset/email-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "missing@example.com",
+                                  "captchaId": "captcha-id",
+                                  "captchaCode": "A2B3"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("如果邮箱已注册，验证码将发送至该邮箱"));
+
+        verify(authService).sendPasswordResetCode(any(EmailCodeSendDTO.class), anyString());
+    }
+
+    @Test
+    @DisplayName("重置密码接口校验 DTO 后调用认证服务")
+    void resetPasswordDelegatesValidatedRequest() throws Exception {
+        mockMvc.perform(post("/api/user/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reader@example.com",
+                                  "emailCode": "381642",
+                                  "newPassword": "NewPassword456!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("密码重置成功"));
+
+        verify(authService).resetPassword(any(BlogUserPasswordResetDTO.class));
+    }
+
+    @Test
+    @DisplayName("恢复账号接口成功后要求用户重新登录")
+    void restoreAccountReturnsReloginMessage() throws Exception {
+        mockMvc.perform(post("/api/user/account/restore")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reader@example.com",
+                                  "password": "StrongPassword123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value("账号已恢复，请重新登录"));
+
+        verify(authService).restoreAccount(any(BlogUserRestoreDTO.class));
     }
 
     @ParameterizedTest(name = "{0}")

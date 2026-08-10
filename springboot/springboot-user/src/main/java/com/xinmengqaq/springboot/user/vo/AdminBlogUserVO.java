@@ -1,4 +1,4 @@
-package com.xinmengqaq.springboot.admin.vo;
+package com.xinmengqaq.springboot.user.vo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.OffsetDateTime;
 
 /**
- * 管理员视角用户详情 VO，包含完整字段
+ * 管理员视角的普通用户公开信息。
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
@@ -29,5 +29,4 @@ public class AdminBlogUserVO {
     private OffsetDateTime createdAt;
 
     private OffsetDateTime updatedAt;
-
 }

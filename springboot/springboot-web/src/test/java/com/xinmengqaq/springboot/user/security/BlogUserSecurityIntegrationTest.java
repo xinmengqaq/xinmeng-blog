@@ -31,6 +31,7 @@ import tools.jackson.databind.ObjectMapper;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -274,6 +275,39 @@ class BlogUserSecurityIntegrationTest {
                 .andExpect(jsonPath("$.data").value("12"));
     }
 
+    @Test
+    @DisplayName("公开恢复与重置入口无需 Token，个人设置和注销入口必须认证")
+    void securityChainSeparatesPublicRecoveryAndProtectedAccountEndpoints() throws Exception {
+        mockMvc.perform(post("/api/user/password/reset/email-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/user/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/user/account/restore")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/user/account/cancel"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("数据库凭证版本递增后旧用户 Token 立即失效")
+    void passwordVersionChangeInvalidatesExistingToken() throws Exception {
+        insertUser(12L, "reader@example.com", "StrongPassword123!", "enabled", 3);
+        String oldToken = jwtUtils.createUserToken(12L, 3);
+        updatePasswordVersion(12L, 4);
+
+        mockMvc.perform(get("/api/user/test/principal")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + oldToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"));
+    }
+
     private void resetBlogUserTable() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             assertTestDatabase(connection);
@@ -317,8 +351,28 @@ class BlogUserSecurityIntegrationTest {
     }
 
     private void assertTestDatabase(Connection connection) throws SQLException {
-        assertThat(connection.getMetaData().getURL()).contains("springboot_vue_test");
-        assertThat(connection.getSchema()).isEqualTo("user_security_test");
+        assertThat(connection.getMetaData().getURL())
+                .isEqualTo("jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable");
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT current_database(), current_schema()")) {
+            assertThat(resultSet.next()).isTrue();
+            assertThat(resultSet.getString(1)).isEqualTo("springboot_vue_test");
+            assertThat(resultSet.getString(2)).isEqualTo("user_security_test");
+            System.out.printf("测试库门禁通过: url=%s, database=%s, schema=%s%n",
+                    connection.getMetaData().getURL(), resultSet.getString(1), resultSet.getString(2));
+        }
+    }
+
+    private void updatePasswordVersion(Long id, int passwordVersion) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            assertTestDatabase(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE blog_user SET password_version = ? WHERE id = ?")) {
+                statement.setInt(1, passwordVersion);
+                statement.setLong(2, id);
+                assertThat(statement.executeUpdate()).isEqualTo(1);
+            }
+        }
     }
 
     private String loginRequest(String email, String password, boolean rememberMe) {

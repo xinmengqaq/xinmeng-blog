@@ -1,4 +1,4 @@
-package com.xinmengqaq.springboot.admin.dto;
+package com.xinmengqaq.springboot.user.dto;
 
 import com.xinmengqaq.springboot.common.page.PageQueryDTO;
 import jakarta.validation.constraints.Pattern;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 管理员用户分页查询 DTO，支持关键词搜索和状态筛选
+ * 管理员分页查询普通用户的请求参数。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -18,5 +18,4 @@ public class AdminBlogUserPageQueryDTO extends PageQueryDTO {
 
     @Pattern(regexp = "enabled|disabled|pending_deletion", message = "用户状态只能是 enabled、disabled 或 pending_deletion")
     private String status;
-
 }

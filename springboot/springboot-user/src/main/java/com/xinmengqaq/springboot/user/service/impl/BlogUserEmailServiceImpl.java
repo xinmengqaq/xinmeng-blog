@@ -9,7 +9,6 @@ import com.xinmengqaq.springboot.user.enums.EmailCodePurpose;
 import com.xinmengqaq.springboot.user.service.BlogUserEmailService;
 import jakarta.annotation.Resource;
 import jakarta.mail.internet.MimeMessage;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -21,7 +20,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-@Slf4j
 public class BlogUserEmailServiceImpl implements BlogUserEmailService {
 
 
@@ -57,21 +55,18 @@ public class BlogUserEmailServiceImpl implements BlogUserEmailService {
 
         //检查冷却
         if (emailCodeCooldownCache.getIfPresent(cacheKey) != null){
-            log.warn("邮箱验证码发送被冷却拦截，purpose={}, clientIp={}", purpose.getValue(), clientIp);
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS,"冷却中，请稍后再试");
         }
 
         //检查IP限额
         AtomicInteger ipCount = emailCodeIpRateCache.get(ipLimitKey , key-> new AtomicInteger());
         if (ipCount.incrementAndGet() > 20){
-            log.warn("邮箱验证码发送被IP限频拦截，purpose={}, clientIp={}", purpose.getValue(), clientIp);
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS,"请求频繁请稍后再试");
         }
 
         //检查邮箱限额
         AtomicInteger emailCount = emailCodeEmailRateCache.get(cacheKey, key -> new AtomicInteger());
         if (emailCount.incrementAndGet() > 20){
-            log.warn("邮箱验证码发送被邮箱限频拦截，purpose={}, clientIp={}", purpose.getValue(), clientIp);
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS,"请求邮箱频繁请稍后再试");
         }
 
@@ -81,8 +76,6 @@ public class BlogUserEmailServiceImpl implements BlogUserEmailService {
 
         emailCodeCache.put(cacheKey,new EmailCodeRecord(Integer.parseInt(emailCode),0));
         emailCodeCooldownCache.put(cacheKey, true);
-
-        log.info("邮箱验证码发送成功，purpose={}, clientIp={}", purpose.getValue(), clientIp);
     }
 
     public Boolean consume(EmailCodePurpose purpose, String email, String inputCode){
@@ -92,7 +85,6 @@ public class BlogUserEmailServiceImpl implements BlogUserEmailService {
 
         EmailCodeRecord result = emailCodeCache.asMap().compute(cacheKey,(K,record) ->{
             if(record == null){
-                log.warn("邮箱验证码消费失败，验证码不存在或已过期，purpose={}", purpose.getValue());
                 throw new BusinessException(ErrorCode.NOT_FOUND,"验证码不存在或已过期");
             }
             if (record.getCode() == Integer.parseInt(inputCode)){
@@ -103,12 +95,6 @@ public class BlogUserEmailServiceImpl implements BlogUserEmailService {
             record.setErrorCount(newCount);
             return record;
         });
-
-        if (result == null) {
-            log.info("邮箱验证码消费成功，purpose={}", purpose.getValue());
-        } else {
-            log.warn("邮箱验证码消费失败，验证码错误，purpose={}", purpose.getValue());
-        }
 
         return result == null;
     }
@@ -133,9 +119,7 @@ public class BlogUserEmailServiceImpl implements BlogUserEmailService {
             );
 
             javaMailSender.send(mimeMessage);
-            log.info("邮箱验证码邮件发送成功，purpose={}", purpose.getValue());
-        } catch (Exception exception) {
-            log.error("邮箱验证码邮件发送失败，purpose={}", purpose.getValue(), exception);
+        } catch (Exception ignored) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "验证码发送失败，请稍后再试");
         }
     }

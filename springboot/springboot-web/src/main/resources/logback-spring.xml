@@ -38,6 +38,21 @@
         </encoder>
     </appender>
 
+    <appender name="USER_OPERATION_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH:-logs}/user-operation.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH:-logs}/user-operation.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <!-- [日志] logger level
          logger 按 name（通常是包名）划分日志来源，level 控制该包的输出级别：TRACE<DEBUG<INFO<WARN<ERROR。
          生产环境保持 INFO 基线，保留启动结果和必要业务事件；产生大量无用输出的第三方包再单独设为 WARN。
@@ -58,6 +73,11 @@
     <logger name="ARTICLE_OPERATION" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ARTICLE_FILE"/>
+    </logger>
+
+    <logger name="USER_OPERATION" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="USER_OPERATION_FILE"/>
     </logger>
 
     <root level="INFO">

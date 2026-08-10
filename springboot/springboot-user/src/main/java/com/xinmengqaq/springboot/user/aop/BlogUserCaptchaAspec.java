@@ -19,6 +19,12 @@ public class BlogUserCaptchaAspec {
     @Resource
     private BlogUserCaptchaService blogUserCaptchaService;
 
+    /**
+     * 在目标 Service 方法执行前消费并校验图形验证码。
+     *
+     * @param joinPoint 当前被拦截的方法调用
+     * @throws BusinessException 验证码参数缺失、错误、过期或已使用时抛出
+     */
     @Before("@annotation(com.xinmengqaq.springboot.user.aop.RequireCaptcha)")
     public void verify(JoinPoint joinPoint) {
         // 1. 遍历方法参数，找到实现了 CaptchaCarrier 的参数

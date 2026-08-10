@@ -7,10 +7,20 @@ import com.xinmengqaq.springboot.user.service.BlogUserEmailService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 
 
-@SpringBootTest(classes = SpringbootApplication.class)
+@EnabledIfEnvironmentVariable(named = "RUN_LIVE_MAIL_TEST", matches = "true")
+@SpringBootTest(
+        classes = SpringbootApplication.class,
+        properties = {
+                "spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable",
+                "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS user_mail_test; SET search_path TO user_mail_test"
+        }
+)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class BlogUserEmailOperationsMailTest {
 
 

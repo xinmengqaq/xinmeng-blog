@@ -24,11 +24,11 @@ public interface BlogUserMapper extends BaseMapper<BlogUser> {
     BlogUser selectByEmailForUpdate(@Param("email") String email);
 
     /**
-     * 删除过期的待激活用户
+     * 删除过期的待删除用户
      * @param now 当前时间
      * @param limit 删除数量限制
      * @return 删除的用户数量
      */
-    Long deleteExpiredPendingUsers(@Param("now") OffsetDateTime now, @Param("limit") int limit);
+    int deleteExpiredPendingUsers(@Param("now") OffsetDateTime now, @Param("limit") int limit);
 
 }

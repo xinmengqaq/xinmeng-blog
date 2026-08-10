@@ -7,6 +7,8 @@ import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.user.dto.BlogUserLoginDTO;
 import com.xinmengqaq.springboot.user.dto.BlogUserRegisterDTO;
 import com.xinmengqaq.springboot.user.dto.EmailCodeSendDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserPasswordResetDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserRestoreDTO;
 import com.xinmengqaq.springboot.user.service.BlogUserAuthService;
 import com.xinmengqaq.springboot.user.service.BlogUserCaptchaService;
 import com.xinmengqaq.springboot.user.vo.BlogUserVO;
@@ -86,6 +88,54 @@ public class BlogUserAuthController {
         log.info("用户退出登录成功，clientIp={}", clientIp);
         Result result = Result.success();
         result.setMsg("退出成功");
+        return result;
+    }
+
+    /**
+     * 发送找回密码验证码，对不存在邮箱返回相同结果。
+     *
+     * @param dto 邮箱和图形验证码
+     * @param request 当前请求
+     * @return 固定的发码受理结果
+     */
+    @Operation(summary = "发送重置密码验证码", description = "响应不泄露邮箱是否已注册")
+    @PostMapping("/password/reset/email-code")
+    public Result sendPasswordResetCode(@Valid @RequestBody EmailCodeSendDTO dto,
+                                        HttpServletRequest request) {
+        String clientIp = JakartaServletUtil.getClientIP(request);
+        blogUserAuthService.sendPasswordResetCode(dto, clientIp);
+        Result result = Result.success();
+        result.setMsg("如果邮箱已注册，验证码将发送至该邮箱");
+        return result;
+    }
+
+    /**
+     * 通过邮箱验证码重置密码。
+     *
+     * @param dto 密码重置请求
+     * @return 密码重置结果
+     */
+    @Operation(summary = "重置用户密码", description = "成功后所有旧用户 JWT 失效")
+    @PostMapping("/password/reset")
+    public Result resetPassword(@Valid @RequestBody BlogUserPasswordResetDTO dto) {
+        blogUserAuthService.resetPassword(dto);
+        Result result = Result.success();
+        result.setMsg("密码重置成功");
+        return result;
+    }
+
+    /**
+     * 恢复仍在七天期限内的待删除账号。
+     *
+     * @param dto 账号恢复请求
+     * @return 账号恢复结果
+     */
+    @Operation(summary = "恢复待删除账号", description = "恢复成功后需要重新登录")
+    @PostMapping("/account/restore")
+    public Result restoreAccount(@Valid @RequestBody BlogUserRestoreDTO dto) {
+        blogUserAuthService.restoreAccount(dto);
+        Result result = Result.success();
+        result.setMsg("账号已恢复，请重新登录");
         return result;
     }
 

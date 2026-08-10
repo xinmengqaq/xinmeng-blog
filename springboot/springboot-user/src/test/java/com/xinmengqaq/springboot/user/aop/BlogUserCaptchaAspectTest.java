@@ -3,11 +3,13 @@ package com.xinmengqaq.springboot.user.aop;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.user.dto.EmailCodeSendDTO;
+import com.xinmengqaq.springboot.user.dto.BlogUserEmailCodeSendDTO;
 import com.xinmengqaq.springboot.user.enums.EmailCodePurpose;
 import com.xinmengqaq.springboot.user.mapper.BlogUserMapper;
 import com.xinmengqaq.springboot.user.service.BlogUserCaptchaService;
 import com.xinmengqaq.springboot.user.service.impl.BlogUserAuthServiceImpl;
 import com.xinmengqaq.springboot.user.service.impl.BlogUserEmailServiceImpl;
+import com.xinmengqaq.springboot.user.service.impl.BlogUserProfileServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,8 @@ class BlogUserCaptchaAspectTest {
 
     private BlogUserAuthServiceImpl authService;
 
+    private BlogUserProfileServiceImpl profileService;
+
     @BeforeEach
     void setUp() {
         BlogUserCaptchaAspec aspect = new BlogUserCaptchaAspec();
@@ -57,6 +61,15 @@ class BlogUserCaptchaAspectTest {
         proxyFactory.setProxyTargetClass(true);
         proxyFactory.addAspect(aspect);
         authService = proxyFactory.getProxy();
+
+        BlogUserProfileServiceImpl profileTarget = new BlogUserProfileServiceImpl();
+        ReflectionTestUtils.setField(profileTarget, "blogUserMapper", blogUserMapper);
+        ReflectionTestUtils.setField(profileTarget, "blogUserEmailService", emailService);
+        ReflectionTestUtils.setField(profileTarget, "passwordEncoder", passwordEncoder);
+        AspectJProxyFactory profileProxyFactory = new AspectJProxyFactory(profileTarget);
+        profileProxyFactory.setProxyTargetClass(true);
+        profileProxyFactory.addAspect(aspect);
+        profileService = profileProxyFactory.getProxy();
     }
 
     @Test
@@ -99,6 +112,36 @@ class BlogUserCaptchaAspectTest {
 
         verify(emailService).send(eq(EmailCodePurpose.REGISTER), eq("reader@example.com"),
                 eq("203.0.113.10"));
+    }
+
+    @Test
+    @DisplayName("图形验证码错误时 AOP 必须阻断找回密码发码")
+    void invalidCaptchaStopsPasswordResetEmailCode() {
+        EmailCodeSendDTO dto = emailCodeSendDTO("captcha-id", "Z9Z9");
+        dto.setEmail("reader@example.com");
+        when(captchaService.consume("captcha-id", "Z9Z9")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.sendPasswordResetCode(dto, "203.0.113.10"))
+                .isInstanceOf(BusinessException.class);
+
+        verify(emailService, never()).send(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("图形验证码错误时 AOP 必须阻断换邮箱发码")
+    void invalidCaptchaStopsEmailChangeCode() {
+        BlogUserEmailCodeSendDTO dto = new BlogUserEmailCodeSendDTO();
+        dto.setCurrentPassword("OldPassword123!");
+        dto.setNewEmail("new-reader@example.com");
+        dto.setCaptchaId("captcha-id");
+        dto.setCaptchaCode("Z9Z9");
+        when(captchaService.consume("captcha-id", "Z9Z9")).thenReturn(false);
+
+        assertThatThrownBy(() -> profileService.sendEmailChangeCode(12L, dto, "203.0.113.10"))
+                .isInstanceOf(BusinessException.class);
+
+        verify(blogUserMapper, never()).selectById(any());
+        verify(emailService, never()).send(any(), any(), any());
     }
 
     private EmailCodeSendDTO emailCodeSendDTO(String captchaId, String captchaCode) {

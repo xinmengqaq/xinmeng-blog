@@ -80,7 +80,10 @@ public class BlogUserSecurityConfig {
                                 "/api/user/captcha",
                                 "/api/user/register",
                                 "/api/user/register/email-code",
-                                "/api/user/login"
+                                "/api/user/login",
+                                "/api/user/password/reset/email-code",
+                                "/api/user/password/reset",
+                                "/api/user/account/restore"
                         ).permitAll() // 允许所有请求
                         .anyRequest().authenticated()) // 其他请求需要认证
                 .oauth2ResourceServer(oauth2 -> oauth2 // OAuth2 资源服务器配置
