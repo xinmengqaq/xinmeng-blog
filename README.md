@@ -96,8 +96,8 @@ PostgreSQL 保存管理员、文章、分类、标签、站点配置和文件地
 在 `springboot/springboot-web/src/main/resources/application-local.yml` 中直接配置本地值，或设置同名环境变量：
 
 ```text
-DB_URL=jdbc:postgresql://localhost:5432/springboot_vue?currentSchema=public&sslmode=disable
-DB_USERNAME=<数据库用户名>
+DB_URL=jdbc:postgresql://localhost:5433/spring_blog?currentSchema=public&sslmode=disable
+DB_USERNAME=blog_remote
 DB_PASSWORD=<数据库密码>
 JWT_SECRET=<JWT 密钥>
 DOCS_ENABLED=true
@@ -110,7 +110,7 @@ DOCS_ENABLED=true
 ```text
 APP_ENV=development
 DOCS_ENABLED=true
-DATABASE_URL=postgresql+asyncpg://<数据库用户名>:<数据库密码>@localhost:5432/springboot_vue
+DATABASE_URL=postgresql+asyncpg://blog_remote:<数据库密码>@localhost:5433/spring_blog
 DB_ECHO=true
 LOG_LEVEL=DEBUG
 JWT_SECRET=<与 Spring Boot 相同的 JWT 密钥>
@@ -132,7 +132,7 @@ VITE_API_BASE=/api
 
 ### PostgreSQL
 
-在 pgAdmin 中新建名为 `springboot_vue` 的数据库，然后选中它并在“查询工具”中执行 `pgsql/schema.sql`。
+在 pgAdmin 中新建名为 `spring_blog` 的数据库，然后选中它并在“查询工具”中执行 `pgsql/schema.sql`。
 
 默认管理员账号和密码均为 `admin`，首次登录后应立即修改密码。
 

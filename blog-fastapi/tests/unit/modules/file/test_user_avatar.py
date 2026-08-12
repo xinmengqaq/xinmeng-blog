@@ -11,6 +11,8 @@ from app.core.exceptions import BusinessException
 from app.db.session import get_db_session
 from app.main import app
 from app.modules.file.image import service
+from app.modules.file.image.schemas import ImageUploadData
+from app.modules.file.image.service import ImageService
 from app.modules.file.storage.dependencies import get_user_avatar_storage
 from app.modules.file.storage.local_disk import LocalStorage
 from app.modules.user.dependencies import get_current_user
@@ -36,9 +38,16 @@ def test_upload_user_avatar_success(monkeypatch):
     session = SimpleNamespace(commit=AsyncMock(), rollback=AsyncMock())
     monkeypatch.setattr(service, "get_user", AsyncMock(return_value=user))
 
-    result = asyncio.run(service.update_user_avatar(
-        7, "avatar.png", "image/png", _make_png_bytes(), storage, session,
-    ))
+    result = asyncio.run(
+        ImageService(session, storage).update_user_avatar(
+            7,
+            ImageUploadData(
+                filename="avatar.png",
+                content_type="image/png",
+                content=_make_png_bytes(),
+            ),
+        )
+    )
 
     assert result == "/files/users/avatar/new.png"
     assert user.avatar == result
@@ -49,16 +58,23 @@ def test_upload_user_avatar_rejects_gif(monkeypatch):
     monkeypatch.setattr(service, "get_user", AsyncMock())
 
     with pytest.raises(BusinessException, match="文件类型不允许"):
-        asyncio.run(service.update_user_avatar(
-            7, "avatar.gif", "image/gif", _make_gif_bytes(), AsyncMock(), AsyncMock(),
-        ))
+        asyncio.run(
+            ImageService(AsyncMock(), AsyncMock()).update_user_avatar(
+                7,
+                ImageUploadData(
+                    filename="avatar.gif",
+                    content_type="image/gif",
+                    content=_make_gif_bytes(),
+                ),
+            )
+        )
 
     service.get_user.assert_not_awaited()
 
 
 def test_upload_user_avatar_requires_user_token():
     with pytest.raises(BusinessException) as exc_info:
-        asyncio.run(get_current_user(None, AsyncMock()))
+        asyncio.run(get_current_user(None, AsyncMock(), SimpleNamespace(state=SimpleNamespace())))
 
     assert exc_info.value.code == "401"
     assert exc_info.value.message == "未登录"
@@ -68,13 +84,13 @@ def test_user_avatar_rejects_admin_token(monkeypatch):
     monkeypatch.setattr(user_dependencies, "decode_token", lambda _: {
         "sub": "7",
         "passwordVersion": 1,
-        "principalType": "admin",
+        "tokenType": "admin",
     })
     session = SimpleNamespace(execute=AsyncMock())
     credentials = SimpleNamespace(credentials="admin-token")
 
     with pytest.raises(BusinessException) as exc_info:
-        asyncio.run(get_current_user(credentials, session))
+        asyncio.run(get_current_user(credentials, session, SimpleNamespace(state=SimpleNamespace())))
 
     assert exc_info.value.code == "401"
     session.execute.assert_not_awaited()
@@ -84,7 +100,7 @@ def test_admin_auth_rejects_user_token(monkeypatch):
     monkeypatch.setattr(auth_service, "decode_token", lambda _: {
         "sub": "7",
         "passwordVersion": 1,
-        "principalType": "user",
+        "tokenType": "user",
     })
     session = SimpleNamespace(execute=AsyncMock())
 
@@ -95,6 +111,24 @@ def test_admin_auth_rejects_user_token(monkeypatch):
     session.execute.assert_not_awaited()
 
 
+def test_user_auth_exposes_user_id_to_request_log(monkeypatch):
+    monkeypatch.setattr(user_dependencies, "decode_token", lambda _: {
+        "sub": "7",
+        "passwordVersion": 1,
+        "tokenType": "user",
+    })
+    user = SimpleNamespace(id=7, status="enabled", password_version=1)
+    result = SimpleNamespace(scalar_one_or_none=lambda: user)
+    session = SimpleNamespace(execute=AsyncMock(return_value=result))
+    request = SimpleNamespace(state=SimpleNamespace())
+    credentials = SimpleNamespace(credentials="user-token")
+
+    user_id = asyncio.run(get_current_user(credentials, session, request))
+
+    assert user_id == 7
+    assert request.state.user_id == 7
+
+
 def test_remove_user_avatar_clears_url_and_file(monkeypatch):
     old_url = "/files/users/avatar/old.png"
     user = SimpleNamespace(id=7, avatar=old_url, status="enabled")
@@ -102,7 +136,7 @@ def test_remove_user_avatar_clears_url_and_file(monkeypatch):
     session = SimpleNamespace(commit=AsyncMock(), rollback=AsyncMock())
     monkeypatch.setattr(service, "get_user", AsyncMock(return_value=user))
 
-    asyncio.run(service.remove_user_avatar(7, storage, session))
+    asyncio.run(ImageService(session, storage).remove_user_avatar(7))
 
     assert user.avatar is None
     session.commit.assert_awaited_once()

@@ -19,10 +19,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import {
-  allowedBackgroundColors,
-  allowedTextColors,
-} from '../markdown/markdownSchema'
+import { allowedBackgroundColors, allowedTextColors } from '@/utils/authorHtml'
 import type { EditorSelection } from '../utils/dom'
 import { createRangeReference } from '../utils/dom'
 

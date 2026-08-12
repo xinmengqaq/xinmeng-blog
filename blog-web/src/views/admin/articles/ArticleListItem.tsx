@@ -5,7 +5,6 @@ import type { ArticleVO } from '@/types/article'
 
 import { ArticleCover } from './ArticleCover'
 import { ArticleListActions } from './ArticleListActions'
-import { ArticleStatusBadge } from './ArticleStatusBadge'
 
 type ArticleListItemProps = {
   article: ArticleVO
@@ -29,6 +28,12 @@ const formatDateTime = (value?: string | null) => {
         dateStyle: 'medium',
         timeStyle: 'short',
       }).format(date)
+}
+
+const articleStatusLabels: Record<ArticleVO['status'], string> = {
+  draft: '草稿',
+  published: '已发布',
+  hidden: '隐藏',
 }
 
 export const ArticleListItem = ({
@@ -57,7 +62,11 @@ export const ArticleListItem = ({
     <div className="article-list-item__body">
       <div className="article-list-item__heading">
         <h2>{article.title}</h2>
-        <ArticleStatusBadge status={article.status} />
+        <span
+          className={`article-status-badge article-status-badge--${article.status}`}
+        >
+          {articleStatusLabels[article.status]}
+        </span>
         {article.isTop ? (
           <span className="article-feature-flag">
             <Pin />

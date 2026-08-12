@@ -31,13 +31,22 @@ import {
   type ArticleFormErrors,
   validateArticleForm,
 } from './articleEditorForm'
-import { ArticleSaveStatus, type ArticleSaveState } from './ArticleSaveStatus'
 import { useArticleImageDrafts } from './hooks/useArticleImageDrafts'
 import { useArticleImageSave } from './hooks/useArticleImageSave'
 import './articlePages.css'
 
 type ArticleEditorViewProps = {
   mode: 'create' | 'edit'
+}
+
+type ArticleSaveState = 'clean' | 'dirty' | 'saving' | 'saved' | 'failed'
+
+const saveStateLabels: Record<ArticleSaveState, string> = {
+  clean: '保存状态：未修改',
+  dirty: '保存状态：有未保存修改',
+  saving: '保存状态：保存中',
+  saved: '保存状态：已保存',
+  failed: '保存状态：保存失败',
 }
 
 export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
@@ -232,7 +241,12 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
           返回文章列表
         </Button>
         <h1>{mode === 'create' ? '新建文章' : '编辑文章'}</h1>
-        <ArticleSaveStatus state={displayedSaveState} />
+        <span
+          className={`article-save-status article-save-status--${displayedSaveState}`}
+          role="status"
+        >
+          {saveStateLabels[displayedSaveState]}
+        </span>
       </header>
 
       {requestError ? <Alert type="error">{requestError}</Alert> : null}

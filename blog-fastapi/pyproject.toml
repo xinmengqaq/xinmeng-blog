@@ -18,7 +18,6 @@ dependencies = [
     "requests-toolbelt>=1.0.0",
     "websockets>=16.0",
     "watchfiles>=1.1.1",
-
     # =========================================================
     # LangChain 核心框架
     # 作用：LangChain 1.x 主体、核心抽象、社区组件、实验性组件、文本切分器
@@ -29,7 +28,6 @@ dependencies = [
     "langchain-classic>=1.0.2",
     "langchain-text-splitters>=1.1.1",
     "langchain-experimental>=0.4.1",
-
     # =========================================================
     # LangGraph / Agent 编排
     # 作用：构建 Agent、状态图、多步骤工作流、检查点、PostgreSQL 持久化
@@ -40,7 +38,6 @@ dependencies = [
     "langgraph-checkpoint-postgres>=3.0.5",
     "langgraph-sdk>=0.3.9",
     "langgraph-cli[inmem]>=0.4.30",
-
     # =========================================================
     # MCP / FastMCP 集成
     # 作用：构建 MCP Server、连接 MCP 工具、资源、Prompt
@@ -48,7 +45,6 @@ dependencies = [
     "mcp>=1.27.0",
     "fastmcp>=3.2.4",
     "langchain-mcp-adapters>=0.2.1",
-
     # =========================================================
     # 大模型供应商与适配器
     # 作用：接入 OpenAI 协议、DeepSeek、Anthropic、OpenRouter、通义千问、腾讯等模型
@@ -63,13 +59,11 @@ dependencies = [
     "dashscope>=1.25.6",
     "tencentcloud-sdk-python>=3.1.86",
     "pyjwt>=2.8",
-
     # =========================================================
     # 搜索工具
     # 作用：接入 Tavily 等联网搜索工具
     # =========================================================
     "langchain-tavily>=0.2.17",
-
     # =========================================================
     # 配置管理 / 数据校验 / 序列化
     # 作用：读取 .env、Pydantic 配置、JSON/YAML、结构化输出
@@ -82,7 +76,6 @@ dependencies = [
     "jsonschema>=4.26.0",
     "jsonref>=1.1.0",
     "dataclasses-json>=0.6.7",
-
     # =========================================================
     # 日志 / 命令行 / 调试辅助
     # 作用：日志输出、CLI、富文本终端输出、重试机制
@@ -95,7 +88,6 @@ dependencies = [
     "tqdm>=4.67.3",
     "python-dateutil>=2.9.0",
     "pytz>=2026.2",
-
     # =========================================================
     # RAG / 向量数据库 / 数据库连接
     # 作用：Milvus 向量库、PostgreSQL 检查点、SQL 数据源
@@ -106,7 +98,6 @@ dependencies = [
     "psycopg-pool>=3.3.0",
     "sqlalchemy>=2.0",
     "asyncpg>=0.29",
-
     # =========================================================
     # Embedding / Tokenizer / 文本处理
     # 作用：TokenTextSplitter、SemanticChunker、文本相似度、传统 NLP 处理
@@ -118,7 +109,6 @@ dependencies = [
     "nltk>=3.9.4",
     "regex>=2026.2.28",
     "langdetect>=1.0.9",
-
     # =========================================================
     # HuggingFace / Transformers 基础组件
     # 作用：本地模型、Tokenizer、部分文档解析模型可能会用到
@@ -127,7 +117,6 @@ dependencies = [
     "tokenizers>=0.22.2",
     "huggingface-hub>=1.11.0",
     "safetensors>=0.7.0",
-
     # =========================================================
     # Unstructured / 文档解析
     # 作用：PDF、Word、PPT、Excel、HTML、Markdown、图片文档等 Loader 支持
@@ -164,6 +153,7 @@ dependencies = [
     "python-oxmsg>=0.0.2",
     "olefile>=0.47",
     "pypandoc-binary>=1.17",
+    "mutagen>=1.48.1",
 ]
 
 [dependency-groups]

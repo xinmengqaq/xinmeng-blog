@@ -1,5 +1,4 @@
 import os
-import logging
 
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler as fastapi_http_exception_handler
@@ -7,12 +6,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
+from loguru import logger
 
 from app.core.exceptions import BusinessException, SystemException
 from app.core.response_codes import ResponseCode, DEFAULT_MESSAGES
 
 DEBUG = os.getenv("APP_ENV", "development") == "development"
-logger = logging.getLogger("app.exceptions")
 
 
 def http_status_from_code(code: str, default: int = 400) -> int:
@@ -27,8 +26,9 @@ async def business_exception_handler(request: Request, exc: BusinessException) -
     # 业务异常是预期分支；开发环境记录请求位置和业务码，便于定位调用链。
     if DEBUG:
         logger.info(
-            "BusinessException on %s %s code=%s",
+            "业务异常 方法={} 路径={} 业务码={} 请求ID={}",
             request.method, request.url.path, exc.code,
+            request.state.request_id,
         )
     return JSONResponse(
         status_code=http_status_from_code(exc.code),
@@ -38,13 +38,14 @@ async def business_exception_handler(request: Request, exc: BusinessException) -
 
 async def system_exception_handler(request: Request, exc: SystemException) -> JSONResponse:
     # 系统异常对外统一为 code="500" 和“系统异常”，具体原因只保存在日志。
-    logger.error(
-        "SystemException on %s %s code=%s internal_message=%s",
+    logger.opt(exception=exc).error(
+        "系统异常 方法={} 路径={} 业务码={} 内部信息={} 请求ID={}",
         request.method, request.url.path, exc.code, exc.message,
-        exc_info=True,
+        getattr(request.state, "request_id", None),
     )
     return JSONResponse(
         status_code=500,
+        headers={"X-Request-ID": request.state.request_id},
         content={
             "code": ResponseCode.INTERNAL_SERVER_ERROR,
             "message": DEFAULT_MESSAGES[ResponseCode.INTERNAL_SERVER_ERROR],
@@ -55,13 +56,14 @@ async def system_exception_handler(request: Request, exc: SystemException) -> JS
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     # 未识别异常统一进入兜底处理，避免内部异常细节直接返回客户端。
-    logger.error(
-        "Unhandled exception on %s %s",
+    logger.opt(exception=exc).error(
+        "未处理异常 方法={} 路径={} 请求ID={}",
         request.method, request.url.path,
-        exc_info=True,
+        getattr(request.state, "request_id", None),
     )
     return JSONResponse(
         status_code=500,
+        headers={"X-Request-ID": request.state.request_id},
         content={
             "code": ResponseCode.INTERNAL_SERVER_ERROR,
             "message": DEFAULT_MESSAGES[ResponseCode.INTERNAL_SERVER_ERROR],

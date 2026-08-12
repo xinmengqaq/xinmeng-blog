@@ -1,5 +1,4 @@
 import { CodeBlock } from './blocks/CodeBlock'
-import { DividerBlock } from './blocks/DividerBlock'
 import { HeadingBlock } from './blocks/HeadingBlock'
 import { ImageBlock } from './blocks/ImageBlock'
 import { ListBlock } from './blocks/ListBlock'
@@ -101,6 +100,6 @@ export const EditorBlockContent = ({
         />
       )
     case 'divider':
-      return <DividerBlock />
+      return <hr className="block-editor__divider" />
   }
 }

@@ -10,7 +10,6 @@
 !/springboot/
 !/blog-web/
 !/blog-fastapi/
-!/pgsql/
 !/assets/
 
 
@@ -40,9 +39,10 @@
 **/application-production.yml
 **/application-production.yaml
 **/application-production.properties
+/pgsql/
+/blog-web/nginx/
 
 # 私钥、证书及常见凭据文件
-/pgsql/sql密码.txt
 **/*.pem
 **/*.key
 **/*.p12

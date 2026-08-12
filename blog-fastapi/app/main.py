@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.exceptions.exception_handlers import ExceptionHandlerRegistry
 from app.core.logging import setup_logging
 from app.core.paths import STORAGE_DIR
+from app.core.request_logging import log_http_request
 from app.core.schemas import ApiResponse, HealthCheckData
 from app.db.lifespan import lifespan
 
@@ -17,6 +18,8 @@ app = FastAPI(
     docs_url="/docs" if settings.docs_enabled else None,
     redoc_url="/redoc" if settings.docs_enabled else None,
 )
+
+app.middleware("http")(log_http_request)
 
 # 应用入口只负责创建应用并调用装配器，具体注册逻辑由对应注册表维护。
 ExceptionHandlerRegistry(app).register_all()

@@ -4,9 +4,15 @@ from fastapi import APIRouter, File, UploadFile
 from fastapi.params import Depends
 
 from app.core.schemas import ApiResponse
-from app.db.session import SessionDep
 from app.modules.auth.dependencies import get_current_admin, CurrentAdminId
 from app.modules.user import CurrentUserId
+from app.modules.file.image.dependencies import (
+    AdminAvatarImageServiceDep,
+    ArticleCoverImageServiceDep,
+    ContentImageServiceDep,
+    SiteBackgroundImageServiceDep,
+    UserAvatarImageServiceDep,
+)
 from app.modules.file.image.schemas import (
     ContentImageCleanupRequest,
     ContentImageCleanupResponse,
@@ -14,26 +20,14 @@ from app.modules.file.image.schemas import (
     CoverImageResponse,
     AvatarResponse,
     BackgroundResponse,
+    ImageUploadData,
 )
 from app.modules.file.image.service import (
     MAX_CONTENT_IMAGE_SIZE,
-    cleanup_content_image,
     prepare_image,
-    remove_admin_avatar,
-    remove_article_cover,
-    remove_site_background,
-    remove_user_avatar,
-    update_article_cover,
-    update_admin_avatar,
-    update_site_background,
-    update_user_avatar,
 )
 from app.modules.file.storage.dependencies import (
-    ArticleCoverStorageDep,
     StorageDep,
-    AdminAvatarStorageDep,
-    UserAvatarStorageDep,
-    SiteBackgroundStorageDep,
 )
 
 # APIRouter 的 prefix 会作用于该路由器下的每个路径，tags 用于文档分组。
@@ -69,9 +63,11 @@ async def upload_content_image(
 
     # 准备：校验 + 命名；失败抛 BusinessException，处理器统一返回业务 code
     image = prepare_image(
-        file.filename or "",
-        file.content_type or "",
-        content,
+        ImageUploadData(
+            filename=file.filename or "",
+            content_type=file.content_type or "",
+            content=content,
+        ),
         allow_gif=True,
     )
 
@@ -89,10 +85,9 @@ async def upload_content_image(
 )
 async def delete_content_image(
     request: ContentImageCleanupRequest,
-    session: SessionDep,
-    storage: StorageDep,
+    service: ContentImageServiceDep,
 ) -> ApiResponse[ContentImageCleanupResponse]:
-    result = await cleanup_content_image(request.file_url, storage, session)
+    result = await service.cleanup_content_image(request.file_url)
     return ApiResponse(data=ContentImageCleanupResponse(result=result))
 
 
@@ -105,12 +100,17 @@ async def delete_content_image(
 async def upload_article_cover(
     article_id: int,                                    # 路径参数，FastAPI 自动转 int，非数字 422->400
     file: Annotated[UploadFile, File(description="文章封面图片")],
-    session: SessionDep,                                # 数据库会话，依赖注入
-    storage: ArticleCoverStorageDep,                    # 封面存储后端，依赖注入
+    service: ArticleCoverImageServiceDep,               # 数据库会话，依赖注入
+                                                        # 封面存储后端，依赖注入
 ) -> ApiResponse[CoverImageResponse]:
     content = await _read_upload_content(file)
-    file_url = await update_article_cover(
-        article_id, file.filename or "", file.content_type or "", content, storage, session,
+    file_url = await service.update_article_cover(
+        article_id,
+        ImageUploadData(
+            filename=file.filename or "",
+            content_type=file.content_type or "",
+            content=content,
+        ),
     )
     return ApiResponse(data=CoverImageResponse(file_url=file_url))
 
@@ -123,10 +123,9 @@ async def upload_article_cover(
 )
 async def delete_article_cover(
     article_id: int,
-    session: SessionDep,
-    storage: ArticleCoverStorageDep,
+    service: ArticleCoverImageServiceDep,
 ) -> ApiResponse[None]:
-    await remove_article_cover(article_id, storage, session)
+    await service.remove_article_cover(article_id)
     return ApiResponse(data=None)
 
 
@@ -145,12 +144,16 @@ user_profile_router = APIRouter(prefix="/profile", tags=["文件"])
 async def upload_user_avatar(
     user_id: CurrentUserId,
     file: Annotated[UploadFile, File(description="普通用户头像图片")],
-    session: SessionDep,
-    storage: UserAvatarStorageDep,
+    service: UserAvatarImageServiceDep,
 ) -> ApiResponse[AvatarResponse]:
     content = await _read_upload_content(file)
-    file_url = await update_user_avatar(
-        user_id, file.filename or "", file.content_type or "", content, storage, session,
+    file_url = await service.update_user_avatar(
+        user_id,
+        ImageUploadData(
+            filename=file.filename or "",
+            content_type=file.content_type or "",
+            content=content,
+        ),
     )
     return ApiResponse(data=AvatarResponse(file_url=file_url))
 
@@ -163,10 +166,9 @@ async def upload_user_avatar(
 )
 async def delete_user_avatar(
     user_id: CurrentUserId,
-    session: SessionDep,
-    storage: UserAvatarStorageDep,
+    service: UserAvatarImageServiceDep,
 ) -> ApiResponse[None]:
-    await remove_user_avatar(user_id, storage, session)
+    await service.remove_user_avatar(user_id)
     return ApiResponse(data=None)
 
 
@@ -179,12 +181,16 @@ async def delete_user_avatar(
 async def upload_avatar(
     admin_id: CurrentAdminId,                              # 身份来源：JWT 的 sub，不是客户端参数
     file: Annotated[UploadFile, File(description="管理员头像图片")],
-    session: SessionDep,
-    storage: AdminAvatarStorageDep,
+    service: AdminAvatarImageServiceDep,
 ) -> ApiResponse[AvatarResponse]:
     content = await _read_upload_content(file)
-    file_url = await update_admin_avatar(
-        admin_id, file.filename or "", file.content_type or "", content, storage, session,
+    file_url = await service.update_admin_avatar(
+        admin_id,
+        ImageUploadData(
+            filename=file.filename or "",
+            content_type=file.content_type or "",
+            content=content,
+        ),
     )
     return ApiResponse(data=AvatarResponse(file_url=file_url))
 
@@ -197,10 +203,9 @@ async def upload_avatar(
 )
 async def delete_avatar(
     admin_id: CurrentAdminId,
-    session: SessionDep,
-    storage: AdminAvatarStorageDep,
+    service: AdminAvatarImageServiceDep,
 ) -> ApiResponse[None]:
-    await remove_admin_avatar(admin_id, storage, session)
+    await service.remove_admin_avatar(admin_id)
     return ApiResponse(data=None)
 
 site_config_router = APIRouter(
@@ -218,12 +223,15 @@ site_config_router = APIRouter(
 )
 async def upload_site_background(
     file: Annotated[UploadFile, File(description="前台头图图片")],
-    session: SessionDep,
-    storage: SiteBackgroundStorageDep,
+    service: SiteBackgroundImageServiceDep,
 ) -> ApiResponse[BackgroundResponse]:
     content = await _read_upload_content(file)
-    file_url = await update_site_background(
-        file.filename or "", file.content_type or "", content, storage, session,
+    file_url = await service.update_site_background(
+        ImageUploadData(
+            filename=file.filename or "",
+            content_type=file.content_type or "",
+            content=content,
+        ),
     )
     return ApiResponse(data=BackgroundResponse(file_url=file_url))
 
@@ -235,8 +243,7 @@ async def upload_site_background(
     response_model=ApiResponse[None],
 )
 async def delete_site_background(
-    session: SessionDep,
-    storage: SiteBackgroundStorageDep,
+    service: SiteBackgroundImageServiceDep,
 ) -> ApiResponse[None]:
-    await remove_site_background(storage, session)
+    await service.remove_site_background()
     return ApiResponse(data=None)

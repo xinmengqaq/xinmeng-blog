@@ -15,6 +15,20 @@ def test_unknown_api_route_returns_http_404_with_unified_body():
         "message": "数据不存在",
         "data": None,
     }
+    assert response.headers["X-Request-ID"]
+
+
+def test_safe_request_id_is_returned_without_logging_query_or_credentials():
+    response = client.get(
+        "/health?token=secret",
+        headers={
+            "Authorization": "Bearer secret",
+            "X-Request-ID": "frontend-request_123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "frontend-request_123"
 
 
 def test_unsupported_api_method_returns_http_405_with_unified_body():

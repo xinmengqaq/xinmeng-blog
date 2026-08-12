@@ -53,6 +53,15 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>application-local.yml</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
             <!-- Spring Boot 打包插件：只有启动模块需要生成可运行 jar -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>

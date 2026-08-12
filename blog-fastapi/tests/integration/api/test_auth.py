@@ -32,6 +32,7 @@ def _make_token(
     *,
     admin_id: int | str = 1,
     password_version: int | str = 1,
+    token_type: str = "admin",
     expired: bool = False,
     wrong_key: bool = False,
     omitted_claim: str | None = None,
@@ -46,6 +47,7 @@ def _make_token(
 
     payload = {
         "sub": str(admin_id),
+        "tokenType": token_type,
         "username": "admin",
         "passwordVersion": password_version,
         "iat": now,
@@ -170,7 +172,7 @@ def test_expired_token():
     assert body["data"] is None
 
 
-@pytest.mark.parametrize("omitted_claim", ["sub", "passwordVersion", "iat", "exp"])
+@pytest.mark.parametrize("omitted_claim", ["sub", "tokenType", "passwordVersion", "iat", "exp"])
 def test_missing_required_claim_returns_unauthorized(omitted_claim):
     token = _make_token(omitted_claim=omitted_claim)
 
@@ -227,3 +229,17 @@ def test_password_version_mismatch():
     assert body["code"] == "401"
     assert body["message"] == "登录已过期，请重新登录"
     assert body["data"] is None
+
+
+def test_user_token_cannot_access_admin_endpoint():
+    _override_db(Admin(id=1, username="admin", password_version=1))
+    token = _make_token(token_type="user")
+
+    response = client.get("/api/admin/test-protected", headers=_auth_headers(token))
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "code": "401",
+        "message": "登录已过期，请重新登录",
+        "data": None,
+    }

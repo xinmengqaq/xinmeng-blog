@@ -50,6 +50,18 @@ describe('BlockMarkdownEditor', () => {
     expect(screen.getByLabelText('代码内容')).toHaveValue('const a = 1')
   })
 
+  it('应将 Markdown 分隔线渲染为编辑器分隔线', () => {
+    const { container } = render(
+      <BlockMarkdownEditor value={'上文\n\n---\n\n下文'} onChange={vi.fn()} />,
+    )
+
+    expect(
+      container.querySelector('hr.block-editor__divider'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('上文')).toBeInTheDocument()
+    expect(screen.getByText('下文')).toBeInTheDocument()
+  })
+
   it('编辑段落时应输出序列化后的 Markdown', () => {
     const onChange = vi.fn()
     render(<BlockMarkdownEditor value="原文" onChange={onChange} />)

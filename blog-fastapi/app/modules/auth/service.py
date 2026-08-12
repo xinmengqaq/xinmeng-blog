@@ -37,11 +37,17 @@ async def authenticate(token: str, session: AsyncSession) -> int:
     try:
         admin_id = int(claims["sub"])
         token_password_version = int(claims["passwordVersion"])
+        token_type = claims["tokenType"]
     except (KeyError, TypeError, ValueError) as e:
         raise BusinessException(
             code=ResponseCode.UNAUTHORIZED,
             message="登录已过期，请重新登录",
         ) from e
+    if token_type != "admin":
+        raise BusinessException(
+            code=ResponseCode.UNAUTHORIZED,
+            message="登录已过期，请重新登录",
+        )
     admin = await get_admin_by_id(admin_id, session)
     if admin is None:
         raise BusinessException(code=ResponseCode.NOT_FOUND, message="管理员不存在")

@@ -15,6 +15,7 @@ from app.modules.auth.models import Admin
 from app.modules.user.models import BlogUser
 from app.modules.file.image.enums import ContentImageCleanupResult
 from app.modules.file.image.models import Article, SiteConfig
+from app.modules.file.image.schemas import ImageUploadData
 from app.modules.file.storage.base import StorageBackend
 
 
@@ -97,15 +98,21 @@ class PreparedImage:
 
 
 def prepare_image(
-    filename: str,
-    content_type: str,
-    content: bytes,
+    upload: ImageUploadData,
     *,
     allow_gif: bool = False,
 ) -> PreparedImage:
     # 纯准备：校验 + 命名。无存储、无 DB，失败只抛业务异常
-    validate_content_image(filename, content_type, content, allow_gif=allow_gif)
-    return PreparedImage(content=content, stored_name=generate_filename(filename))
+    validate_content_image(
+        upload.filename,
+        upload.content_type,
+        upload.content,
+        allow_gif=allow_gif,
+    )
+    return PreparedImage(
+        content=upload.content,
+        stored_name=generate_filename(upload.filename),
+    )
 
 
 #async是异步函数，检查数据库操作是否成功
@@ -134,247 +141,146 @@ async def get_site_config(session: AsyncSession) -> SiteConfig | None:
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def replace_entity_url(
-    *,
-    entity: object,
-    url_attr: str,
-    image: PreparedImage,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> str:
-    # 已加载实体上的 URL 字段替换：存新 -> commit -> 失败删新 / 成功删旧
-    # 不负责查实体、不负责 404；调用方保证 entity 存在
-    old_url = getattr(entity, url_attr)
-    new_url = await storage.save(image.content, image.stored_name)
-    try:
-        setattr(entity, url_attr, new_url)
-        await session.commit()
-    except SQLAlchemyError as e:
-        await session.rollback()
+class ImageService:
+    def __init__(self, session: AsyncSession, storage: StorageBackend) -> None:
+        self.session = session
+        self.storage = storage
+
+    async def cleanup_content_image(self, file_url: str) -> ContentImageCleanupResult:
+        if not self.storage.owns(file_url):
+            return ContentImageCleanupResult.EXTERNAL_IGNORED
+
+        stmt = select(Article.id).where(Article.content.contains(file_url)).limit(1)
         try:
-            await storage.delete(new_url)
-        except OSError as cleanup_error:
-            logger.opt(exception=cleanup_error).warning("数据库提交失败后的新文件补偿清理失败")
-        raise DatabaseException() from e
+            referenced_article = (await self.session.execute(stmt)).scalar_one_or_none()
+        except SQLAlchemyError as e:
+            raise DatabaseException() from e
 
-    if old_url:
-        try:
-            await storage.delete(old_url)
-        except OSError as e:
-            logger.opt(exception=e).warning("删除旧文件失败: {}", old_url)
+        if referenced_article is not None:
+            return ContentImageCleanupResult.RETAINED_IN_USE
 
-    return new_url
-
-
-async def clear_entity_url(
-    *,
-    entity: object,
-    url_attr: str,
-    storage: StorageBackend,
-    session: AsyncSession,
-    scene: str,
-    business_id: int,
-) -> None:
-    old_url = getattr(entity, url_attr)
-    if not old_url:
-        return
-
-    setattr(entity, url_attr, None)
-    try:
-        await session.commit()
-    except SQLAlchemyError as e:
-        await session.rollback()
-        setattr(entity, url_attr, old_url)
-        raise DatabaseException() from e
-
-    try:
-        await storage.delete(old_url)
-    except OSError:
-        logger.warning(
-            "清理绑定图片失败: scene={}, business_id={}, result=database_cleared",
-            scene,
-            business_id,
+        return (
+            ContentImageCleanupResult.DELETED
+            if await self.storage.delete(file_url)
+            else ContentImageCleanupResult.ALREADY_ABSENT
         )
 
+    async def _replace_entity_url(
+        self,
+        entity: object,
+        url_attr: str,
+        image: PreparedImage,
+    ) -> str:
+        # 已加载实体上的 URL 字段替换：存新 -> commit -> 失败删新 / 成功删旧
+        # 不负责查实体、不负责 404；调用方保证 entity 存在
+        old_url = getattr(entity, url_attr)
+        new_url = await self.storage.save(image.content, image.stored_name)
+        try:
+            setattr(entity, url_attr, new_url)
+            await self.session.commit()
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            try:
+                await self.storage.delete(new_url)
+            except OSError as cleanup_error:
+                logger.warning(
+                    "数据库提交失败后的新文件补偿清理失败: 异常类型={}",
+                    type(cleanup_error).__name__,
+                )
+            raise DatabaseException() from e
 
-async def cleanup_content_image(
-    file_url: str,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> ContentImageCleanupResult:
-    if not storage.owns(file_url):
-        return ContentImageCleanupResult.EXTERNAL_IGNORED
+        if old_url:
+            try:
+                await self.storage.delete(old_url)
+            except OSError as e:
+                logger.warning("删除旧文件失败: 异常类型={}", type(e).__name__)
+        return new_url
 
-    stmt = select(Article.id).where(Article.content.contains(file_url)).limit(1)
-    try:
-        referenced_article = (await session.execute(stmt)).scalar_one_or_none()
-    except SQLAlchemyError as e:
-        raise DatabaseException() from e
+    async def _clear_entity_url(
+        self,
+        entity: object,
+        url_attr: str,
+        scene: str,
+        business_id: int,
+    ) -> None:
+        old_url = getattr(entity, url_attr)
+        if not old_url:
+            return
 
-    if referenced_article is not None:
-        return ContentImageCleanupResult.RETAINED_IN_USE
+        setattr(entity, url_attr, None)
+        try:
+            await self.session.commit()
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            setattr(entity, url_attr, old_url)
+            raise DatabaseException() from e
 
-    return (
-        ContentImageCleanupResult.DELETED
-        if await storage.delete(file_url)
-        else ContentImageCleanupResult.ALREADY_ABSENT
-    )
+        try:
+            await self.storage.delete(old_url)
+        except OSError:
+            logger.warning(
+                "清理绑定图片失败: scene={}, business_id={}, result=database_cleared",
+                scene,
+                business_id,
+            )
 
+    async def update_article_cover(self, article_id: int, upload: ImageUploadData) -> str:
+        image = prepare_image(upload)
+        article = await get_article(article_id, self.session)
+        if article is None:
+            raise BusinessException(message="文章不存在", code=ResponseCode.NOT_FOUND)
+        return await self._replace_entity_url(article, "cover_url", image)
 
-async def remove_article_cover(
-    article_id: int,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> None:
-    article = await get_article(article_id, session)
-    if article is None:
-        raise BusinessException(message="文章不存在", code=ResponseCode.NOT_FOUND)
+    async def remove_article_cover(self, article_id: int) -> None:
+        article = await get_article(article_id, self.session)
+        if article is None:
+            raise BusinessException(message="文章不存在", code=ResponseCode.NOT_FOUND)
+        await self._clear_entity_url(article, "cover_url", "article_cover", article_id)
 
-    await clear_entity_url(
-        entity=article,
-        url_attr="cover_url",
-        storage=storage,
-        session=session,
-        scene="article_cover",
-        business_id=article_id,
-    )
+    async def update_admin_avatar(self, admin_id: int, upload: ImageUploadData) -> str:
+        image = prepare_image(upload)
+        admin = await get_admin(admin_id, self.session)
+        if admin is None:
+            raise BusinessException(message="管理员不存在", code=ResponseCode.NOT_FOUND)
+        return await self._replace_entity_url(admin, "avatar", image)
 
+    async def remove_admin_avatar(self, admin_id: int) -> None:
+        admin = await get_admin(admin_id, self.session)
+        if admin is None:
+            raise BusinessException(message="管理员不存在", code=ResponseCode.NOT_FOUND)
+        await self._clear_entity_url(admin, "avatar", "admin_avatar", admin_id)
 
-async def remove_admin_avatar(
-    admin_id: int,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> None:
-    admin = await get_admin(admin_id, session)
-    if admin is None:
-        raise BusinessException(message="管理员不存在", code=ResponseCode.NOT_FOUND)
+    async def update_user_avatar(self, user_id: int, upload: ImageUploadData) -> str:
+        image = prepare_image(upload)
+        user = await get_user(user_id, self.session)
+        if user is None:
+            raise BusinessException(message="用户不存在", code=ResponseCode.NOT_FOUND)
+        if user.status != "enabled":
+            raise BusinessException(message="用户不可用", code=ResponseCode.FORBIDDEN)
+        return await self._replace_entity_url(user, "avatar", image)
 
-    await clear_entity_url(
-        entity=admin,
-        url_attr="avatar",
-        storage=storage,
-        session=session,
-        scene="admin_avatar",
-        business_id=admin_id,
-    )
+    async def remove_user_avatar(self, user_id: int) -> None:
+        user = await get_user(user_id, self.session)
+        if user is None:
+            raise BusinessException(message="用户不存在", code=ResponseCode.NOT_FOUND)
+        if user.status != "enabled":
+            raise BusinessException(message="用户不可用", code=ResponseCode.FORBIDDEN)
+        await self._clear_entity_url(user, "avatar", "user_avatar", user_id)
 
+    async def update_site_background(self, upload: ImageUploadData) -> str:
+        image = prepare_image(upload)
+        site_config = await get_site_config(self.session)
+        if site_config is None:
+            raise BusinessException(message="站点配置不存在", code=ResponseCode.NOT_FOUND)
+        return await self._replace_entity_url(site_config, "background_url", image)
 
-async def remove_site_background(
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> None:
-    site_config = await get_site_config(session)
-    if site_config is None:
-        raise BusinessException(message="站点配置不存在", code=ResponseCode.NOT_FOUND)
-
-    await clear_entity_url(
-        entity=site_config,
-        url_attr="background_url",
-        storage=storage,
-        session=session,
-        scene="site_background",
-        business_id=site_config.id,
-    )
-
-
-async def update_article_cover(
-    article_id: int,
-    filename: str,
-    content_type: str,
-    content: bytes,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> str:
-    image = prepare_image(filename, content_type, content)
-
-    article = await get_article(article_id, session)
-    if article is None:
-        raise BusinessException(message="文章不存在", code=ResponseCode.NOT_FOUND)
-
-    return await replace_entity_url(
-        entity=article,
-        url_attr="cover_url",
-        image=image,
-        storage=storage,
-        session=session,
-    )
-
-
-async def update_admin_avatar(
-    admin_id: int,
-    filename: str,
-    content_type: str,
-    content: bytes,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> str:
-    image = prepare_image(filename, content_type, content)
-
-    admin = await get_admin(admin_id, session)
-    if admin is None:
-        raise BusinessException(message="管理员不存在", code=ResponseCode.NOT_FOUND)
-
-    return await replace_entity_url(
-        entity=admin,
-        url_attr="avatar",
-        image=image,
-        storage=storage,
-        session=session,
-    )
-
-
-async def update_user_avatar(
-    user_id: int,
-    filename: str,
-    content_type: str,
-    content: bytes,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> str:
-    image = prepare_image(filename, content_type, content)
-    user = await get_user(user_id, session)
-    if user is None:
-        raise BusinessException(message="用户不存在", code=ResponseCode.NOT_FOUND)
-    if user.status != "enabled":
-        raise BusinessException(message="用户不可用", code=ResponseCode.FORBIDDEN)
-    return await replace_entity_url(
-        entity=user, url_attr="avatar", image=image, storage=storage, session=session,
-    )
-
-
-async def remove_user_avatar(
-    user_id: int,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> None:
-    user = await get_user(user_id, session)
-    if user is None:
-        raise BusinessException(message="用户不存在", code=ResponseCode.NOT_FOUND)
-    if user.status != "enabled":
-        raise BusinessException(message="用户不可用", code=ResponseCode.FORBIDDEN)
-    await clear_entity_url(
-        entity=user, url_attr="avatar", storage=storage, session=session,
-        scene="user_avatar", business_id=user_id,
-    )
-
-
-async def update_site_background(
-    filename: str,
-    content_type: str,
-    content: bytes,
-    storage: StorageBackend,
-    session: AsyncSession,
-) -> str:
-    image = prepare_image(filename, content_type, content)
-
-    site_config = await get_site_config(session)
-    if site_config is None:
-        raise BusinessException(message="站点配置不存在", code=ResponseCode.NOT_FOUND)
-
-    return await replace_entity_url(
-        entity=site_config,
-        url_attr="background_url",
-        image=image,
-        storage=storage,
-        session=session,
-    )
+    async def remove_site_background(self) -> None:
+        site_config = await get_site_config(self.session)
+        if site_config is None:
+            raise BusinessException(message="站点配置不存在", code=ResponseCode.NOT_FOUND)
+        await self._clear_entity_url(
+            site_config,
+            "background_url",
+            "site_background",
+            site_config.id,
+        )

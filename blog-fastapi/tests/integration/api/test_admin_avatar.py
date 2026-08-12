@@ -10,15 +10,15 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.core.config import settings
 from app.db.session import get_db_session
 from app.modules.auth.dependencies import get_current_admin
 from app.modules.auth.models import Admin
 from app.modules.file.storage.dependencies import get_admin_avatar_storage
 from app.modules.file.storage.local_disk import LocalStorage
 from app.main import app
+from tests.integration.config import TEST_DATABASE_URL
 
-TEST_URL = settings.database_url.replace("springboot_vue", "springboot_vue_test")
+TEST_URL = TEST_DATABASE_URL
 
 # TestClient 用的引擎：NullPool 不复用连接，避免跨测试/跨事件循环连接状态污染
 test_engine = create_async_engine(TEST_URL, echo=False, poolclass=NullPool)

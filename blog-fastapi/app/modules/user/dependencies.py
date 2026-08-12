@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 
@@ -16,6 +16,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
     session: SessionDep,
+    request: Request,
 ) -> int:
     if credentials is None:
         raise BusinessException(code=ResponseCode.UNAUTHORIZED, message="未登录")
@@ -23,16 +24,17 @@ async def get_current_user(
     try:
         user_id = int(claims["sub"])
         token_password_version = int(claims["passwordVersion"])
-        principal_type = claims["principalType"]
+        token_type = claims["tokenType"]
     except (KeyError, TypeError, ValueError) as e:
         raise BusinessException(code=ResponseCode.UNAUTHORIZED, message="登录已过期，请重新登录") from e
-    if principal_type != "user":
+    if token_type != "user":
         raise BusinessException(code=ResponseCode.UNAUTHORIZED, message="登录已过期，请重新登录")
     user = (await session.execute(select(BlogUser).where(BlogUser.id == user_id))).scalar_one_or_none()
     if user is None:
         raise BusinessException(code=ResponseCode.NOT_FOUND, message="用户不存在")
     if user.status != "enabled" or token_password_version != user.password_version:
         raise BusinessException(code=ResponseCode.UNAUTHORIZED, message="登录已过期，请重新登录")
+    request.state.user_id = user.id
     return user.id
 
 

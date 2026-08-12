@@ -8,12 +8,14 @@ from PIL import Image
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.exceptions import BusinessException, DatabaseException
-from app.modules.file import service as file_service
-from app.modules.file.service import (
+from app.modules.file.image import service as file_service
+from app.modules.file.image.dependencies import get_article_cover_image_service
+from app.modules.file.image.schemas import ImageUploadData
+from app.modules.file.image.service import (
+    ImageService,
     MAX_CONTENT_IMAGE_SIZE,
     generate_filename,
     prepare_image,
-    replace_entity_url,
     validate_content_image,
 )
 from app.modules.file.storage.local_disk import LocalStorage
@@ -43,6 +45,10 @@ def _make_gif_bytes() -> bytes:
     buf = io.BytesIO()
     Image.new("RGB", (1, 1)).save(buf, format="GIF")
     return buf.getvalue()
+
+
+def _upload(filename: str, content_type: str, content: bytes) -> ImageUploadData:
+    return ImageUploadData(filename=filename, content_type=content_type, content=content)
 
 
 # 辅助函数名以 _ 开头，pytest 不会把它当测试函数收集。
@@ -148,7 +154,7 @@ def test_generate_filename_has_no_original_name():
 
 def test_prepare_image_returns_content_and_stored_name():
     content = _make_png_bytes()
-    prepared = prepare_image("cover.PNG", "image/png", content)
+    prepared = prepare_image(_upload("cover.PNG", "image/png", content))
 
     assert prepared.content is content
     assert prepared.stored_name.endswith(".png")
@@ -157,7 +163,37 @@ def test_prepare_image_returns_content_and_stored_name():
 
 def test_prepare_image_rejects_invalid_image():
     with pytest.raises(BusinessException, match="文件为空"):
-        prepare_image("empty.png", "image/png", b"")
+        prepare_image(_upload("empty.png", "image/png", b""))
+
+
+def test_image_service_dependency_keeps_request_scoped_tools():
+    session = AsyncMock()
+    storage = AsyncMock()
+
+    image_service = get_article_cover_image_service(session=session, storage=storage)
+
+    assert isinstance(image_service, ImageService)
+    assert image_service.session is session
+    assert image_service.storage is storage
+
+
+def test_image_service_updates_cover_from_module_input_model(monkeypatch):
+    article = SimpleNamespace(id=9, cover_url=None)
+    session = AsyncMock()
+    storage = AsyncMock()
+    storage.save.return_value = "/files/articles/cover/new.png"
+    monkeypatch.setattr(file_service, "get_article", AsyncMock(return_value=article))
+    image_service = ImageService(session=session, storage=storage)
+    upload = ImageUploadData(
+        filename="cover.png",
+        content_type="image/png",
+        content=_make_png_bytes(),
+    )
+
+    result = asyncio.run(image_service.update_article_cover(9, upload))
+
+    assert result == "/files/articles/cover/new.png"
+    session.commit.assert_awaited_once()
 
 
 # ===== replace_entity_url：存新 -> 写库 -> 失败补偿 / 删旧 =====
@@ -165,19 +201,14 @@ def test_prepare_image_rejects_invalid_image():
 
 def test_replace_entity_url_saves_commits_and_deletes_old():
     entity = SimpleNamespace(cover_url="/files/old.png")
-    image = prepare_image("new.png", "image/png", _make_png_bytes())
+    image = prepare_image(_upload("new.png", "image/png", _make_png_bytes()))
     storage = AsyncMock()
     storage.save.return_value = "/files/new.png"
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     new_url = asyncio.run(
-        replace_entity_url(
-            entity=entity,
-            url_attr="cover_url",
-            image=image,
-            storage=storage,
-            session=session,
-        )
+        image_service._replace_entity_url(entity, "cover_url", image)
     )
 
     assert new_url == "/files/new.png"
@@ -190,19 +221,14 @@ def test_replace_entity_url_saves_commits_and_deletes_old():
 
 def test_replace_entity_url_skips_delete_when_no_old_url():
     entity = SimpleNamespace(avatar=None)
-    image = prepare_image("avatar.png", "image/png", _make_png_bytes())
+    image = prepare_image(_upload("avatar.png", "image/png", _make_png_bytes()))
     storage = AsyncMock()
     storage.save.return_value = "/files/avatar.png"
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     asyncio.run(
-        replace_entity_url(
-            entity=entity,
-            url_attr="avatar",
-            image=image,
-            storage=storage,
-            session=session,
-        )
+        image_service._replace_entity_url(entity, "avatar", image)
     )
 
     storage.delete.assert_not_awaited()
@@ -210,21 +236,16 @@ def test_replace_entity_url_skips_delete_when_no_old_url():
 
 def test_replace_entity_url_rolls_back_and_deletes_new_on_db_error():
     entity = SimpleNamespace(cover_url="/files/old.png")
-    image = prepare_image("new.png", "image/png", _make_png_bytes())
+    image = prepare_image(_upload("new.png", "image/png", _make_png_bytes()))
     storage = AsyncMock()
     storage.save.return_value = "/files/new.png"
     session = AsyncMock()
     session.commit.side_effect = SQLAlchemyError("db down")
+    image_service = ImageService(session=session, storage=storage)
 
     with pytest.raises(DatabaseException):
         asyncio.run(
-            replace_entity_url(
-                entity=entity,
-                url_attr="cover_url",
-                image=image,
-                storage=storage,
-                session=session,
-            )
+            image_service._replace_entity_url(entity, "cover_url", image)
         )
 
     session.rollback.assert_awaited_once()
@@ -233,22 +254,17 @@ def test_replace_entity_url_rolls_back_and_deletes_new_on_db_error():
 
 def test_replace_entity_url_preserves_db_error_when_compensation_delete_fails():
     entity = SimpleNamespace(cover_url="/files/old.png")
-    image = prepare_image("new.png", "image/png", _make_png_bytes())
+    image = prepare_image(_upload("new.png", "image/png", _make_png_bytes()))
     storage = AsyncMock()
     storage.save.return_value = "/files/new.png"
     storage.delete.side_effect = OSError("disk busy")
     session = AsyncMock()
     session.commit.side_effect = SQLAlchemyError("db down")
+    image_service = ImageService(session=session, storage=storage)
 
     with pytest.raises(DatabaseException) as exc_info:
         asyncio.run(
-            replace_entity_url(
-                entity=entity,
-                url_attr="cover_url",
-                image=image,
-                storage=storage,
-                session=session,
-            )
+            image_service._replace_entity_url(entity, "cover_url", image)
         )
 
     assert isinstance(exc_info.value.__cause__, SQLAlchemyError)
@@ -258,20 +274,15 @@ def test_replace_entity_url_preserves_db_error_when_compensation_delete_fails():
 
 def test_replace_entity_url_keeps_new_url_when_old_delete_fails():
     entity = SimpleNamespace(cover_url="/files/old.png")
-    image = prepare_image("new.png", "image/png", _make_png_bytes())
+    image = prepare_image(_upload("new.png", "image/png", _make_png_bytes()))
     storage = AsyncMock()
     storage.save.return_value = "/files/new.png"
     storage.delete.side_effect = OSError("disk busy")
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     new_url = asyncio.run(
-        replace_entity_url(
-            entity=entity,
-            url_attr="cover_url",
-            image=image,
-            storage=storage,
-            session=session,
-        )
+        image_service._replace_entity_url(entity, "cover_url", image)
     )
 
     assert new_url == "/files/new.png"
@@ -288,16 +299,10 @@ def test_remove_entity_url_clears_local_url_after_commit():
     entity = SimpleNamespace(avatar=old_url)
     storage = AsyncMock()
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     asyncio.run(
-        file_service.clear_entity_url(
-            entity=entity,
-            url_attr="avatar",
-            storage=storage,
-            session=session,
-            scene="admin_avatar",
-            business_id=7,
-        )
+        image_service._clear_entity_url(entity, "avatar", "admin_avatar", 7)
     )
 
     assert entity.avatar is None
@@ -310,16 +315,10 @@ def test_remove_entity_url_skips_empty_url():
     entity = SimpleNamespace(avatar=None)
     storage = AsyncMock()
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     asyncio.run(
-        file_service.clear_entity_url(
-            entity=entity,
-            url_attr="avatar",
-            storage=storage,
-            session=session,
-            scene="admin_avatar",
-            business_id=7,
-        )
+        image_service._clear_entity_url(entity, "avatar", "admin_avatar", 7)
     )
 
     session.commit.assert_not_awaited()
@@ -332,17 +331,11 @@ def test_remove_entity_url_rolls_back_and_keeps_old_url_on_db_error():
     storage = AsyncMock()
     session = AsyncMock()
     session.commit.side_effect = SQLAlchemyError("db down")
+    image_service = ImageService(session=session, storage=storage)
 
     with pytest.raises(DatabaseException):
         asyncio.run(
-            file_service.clear_entity_url(
-                entity=entity,
-                url_attr="cover_url",
-                storage=storage,
-                session=session,
-                scene="article_cover",
-                business_id=9,
-            )
+            image_service._clear_entity_url(entity, "cover_url", "article_cover", 9)
         )
 
     assert entity.cover_url == old_url
@@ -355,16 +348,10 @@ def test_remove_entity_url_keeps_empty_url_when_file_delete_fails():
     storage = AsyncMock()
     storage.delete.side_effect = OSError("disk busy")
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     asyncio.run(
-        file_service.clear_entity_url(
-            entity=entity,
-            url_attr="background_url",
-            storage=storage,
-            session=session,
-            scene="site_background",
-            business_id=3,
-        )
+        image_service._clear_entity_url(entity, "background_url", "site_background", 3)
     )
 
     assert entity.background_url is None
@@ -384,16 +371,10 @@ def test_remove_entity_url_keeps_unmanaged_file(tmp_path):
     )
     entity = SimpleNamespace(avatar="https://example.com/avatar.png")
     session = AsyncMock()
+    image_service = ImageService(session=session, storage=storage)
 
     asyncio.run(
-        file_service.clear_entity_url(
-            entity=entity,
-            url_attr="avatar",
-            storage=storage,
-            session=session,
-            scene="admin_avatar",
-            business_id=7,
-        )
+        image_service._clear_entity_url(entity, "avatar", "admin_avatar", 7)
     )
 
     assert entity.avatar is None
@@ -443,8 +424,8 @@ def test_remove_bound_image_clears_matching_entity(
     old_url = getattr(entity, url_attr)
     monkeypatch.setattr(file_service, getter_name, AsyncMock(return_value=entity))
 
-    remove = getattr(file_service, remove_name)
-    asyncio.run(remove(*args, storage=storage, session=session))
+    remove = getattr(ImageService(session=session, storage=storage), remove_name)
+    asyncio.run(remove(*args))
 
     assert getattr(entity, url_attr) is None
     session.commit.assert_awaited_once()
@@ -488,9 +469,9 @@ def test_remove_bound_image_rejects_missing_entity(
     session = AsyncMock()
     monkeypatch.setattr(file_service, getter_name, AsyncMock(return_value=None))
 
-    remove = getattr(file_service, remove_name)
+    remove = getattr(ImageService(session=session, storage=storage), remove_name)
     with pytest.raises(BusinessException, match=message):
-        asyncio.run(remove(*args, storage=storage, session=session))
+        asyncio.run(remove(*args))
 
     session.commit.assert_not_awaited()
     storage.delete.assert_not_awaited()

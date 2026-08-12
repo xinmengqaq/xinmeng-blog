@@ -1,6 +1,14 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.modules.file.image.enums import ContentImageCleanupResult
+
+
+class ImageUploadData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    filename: str
+    content_type: str
+    content: bytes
 
 
 class ContentImageResponse(BaseModel):

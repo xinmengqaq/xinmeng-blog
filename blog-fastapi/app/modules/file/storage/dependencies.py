@@ -31,11 +31,26 @@ def get_admin_avatar_storage() -> StorageBackend:
     )
 
 
+def get_user_avatar_storage() -> StorageBackend:
+    return LocalStorage(
+        base_dir=str(STORAGE_DIR / "users" / "avatar"),
+        base_url="/files/users/avatar",
+    )
+
+
 def get_site_background_storage() -> StorageBackend:
     # 前台头图/背景图：独立目录，与封面、头像隔离
     return LocalStorage(
         base_dir=str(STORAGE_DIR / "site" / "background"),
         base_url="/files/site/background",
+    )
+
+
+def get_music_audio_storage() -> StorageBackend:
+    # 音乐 MP3：独立目录，音频与图片隔离
+    return LocalStorage(
+        base_dir=str(STORAGE_DIR / "music" / "audio"),
+        base_url="/files/music/audio",
     )
 
 # StorageDep 把抽象类型与 Depends 声明绑定，路由参数可以直接复用这份依赖契约。
@@ -47,5 +62,10 @@ ArticleCoverStorageDep = Annotated[StorageBackend, Depends(get_article_cover_sto
 # 管理员头像依赖注入
 AdminAvatarStorageDep = Annotated[StorageBackend, Depends(get_admin_avatar_storage)]
 
+UserAvatarStorageDep = Annotated[StorageBackend, Depends(get_user_avatar_storage)]
+
 # 站点头图依赖注入
 SiteBackgroundStorageDep = Annotated[StorageBackend, Depends(get_site_background_storage)]
+
+# 音乐音频存储依赖注入
+MusicAudioStorageDep = Annotated[StorageBackend, Depends(get_music_audio_storage)]
