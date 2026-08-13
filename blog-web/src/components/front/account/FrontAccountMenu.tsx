@@ -118,7 +118,7 @@ export const FrontAccountMenu = ({
       setConfirmingLogout(false)
       onOpenChange(false)
       onNavigate()
-      navigate(result.to, { replace: result.replace })
+      navigate(result.redirectTo, { replace: result.replace })
     } catch {
       // Mutation state keeps the confirmation open for retry.
     }

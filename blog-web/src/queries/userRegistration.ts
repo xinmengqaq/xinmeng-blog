@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
 import { registerUser, sendRegistrationEmailCode } from '@/api/userAuth'
-import type { EmailCodeSendParams, UserRegistrationParams } from '@/types/userAuth'
+import type { UserRegistrationParams } from '@/types/userAuth'
 import { markRegisteredEmail } from '@/utils/userFirstLogin'
 
 const RESEND_SECONDS = 60

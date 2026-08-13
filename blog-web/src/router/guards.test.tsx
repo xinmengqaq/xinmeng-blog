@@ -42,7 +42,7 @@ describe('用户路由守卫', () => {
       error: null,
       isError: false,
       isPending: true,
-    } as ReturnType<typeof useUserProfileQuery>)
+    } as unknown as ReturnType<typeof useUserProfileQuery>)
     const { rerender } = renderUserRoute()
     // When 用户进入个人资料路由
     // Then 守卫只返回资料加载状态，不提前展示个人资料内容
@@ -59,7 +59,7 @@ describe('用户路由守卫', () => {
       error: null,
       isError: false,
       isPending: false,
-    } as ReturnType<typeof useUserProfileQuery>)
+    } as unknown as ReturnType<typeof useUserProfileQuery>)
     rerender(
       <MemoryRouter initialEntries={['/profile']}>
         <Routes>
