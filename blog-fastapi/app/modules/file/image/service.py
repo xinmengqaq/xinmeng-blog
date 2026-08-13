@@ -33,6 +33,8 @@ EXT_TO_MIME = {
 
 # 最大上传文件大小
 MAX_CONTENT_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+# 普通用户头像只有一张图，限制更小
+MAX_USER_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 """
@@ -47,13 +49,14 @@ def validate_content_image(
     content: bytes,
     *,
     allow_gif: bool = False,
+    max_size: int = MAX_CONTENT_IMAGE_SIZE,
 ) -> None:
     #是否是空文件
     if not content:
         raise BusinessException(message="文件为空")
 
     #是否文件超过限定大小
-    if len(content) > MAX_CONTENT_IMAGE_SIZE :
+    if len(content) > max_size :
         raise BusinessException(message="文件大小超过限制")
 
 
@@ -101,6 +104,7 @@ def prepare_image(
     upload: ImageUploadData,
     *,
     allow_gif: bool = False,
+    max_size: int = MAX_CONTENT_IMAGE_SIZE,
 ) -> PreparedImage:
     # 纯准备：校验 + 命名。无存储、无 DB，失败只抛业务异常
     validate_content_image(
@@ -108,6 +112,7 @@ def prepare_image(
         upload.content_type,
         upload.content,
         allow_gif=allow_gif,
+        max_size=max_size,
     )
     return PreparedImage(
         content=upload.content,
@@ -251,7 +256,7 @@ class ImageService:
         await self._clear_entity_url(admin, "avatar", "admin_avatar", admin_id)
 
     async def update_user_avatar(self, user_id: int, upload: ImageUploadData) -> str:
-        image = prepare_image(upload)
+        image = prepare_image(upload, max_size=MAX_USER_AVATAR_SIZE)
         user = await get_user(user_id, self.session)
         if user is None:
             raise BusinessException(message="用户不存在", code=ResponseCode.NOT_FOUND)

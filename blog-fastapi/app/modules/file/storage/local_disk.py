@@ -1,4 +1,6 @@
 import asyncio
+import stat
+from datetime import datetime
 from pathlib import Path
 
 from app.core.exceptions import SystemException
@@ -31,6 +33,19 @@ class LocalStorage(StorageBackend):
         # asyncio.to_thread：把同步删文件丢线程池，不阻塞事件循环（和 save 同理）。
         return await asyncio.to_thread(self._delete_file, file_path)
 
+    async def list_file_urls_older_than(
+        self,
+        cutoff: datetime,
+        limit: int,
+    ) -> list[str]:
+        if limit <= 0:
+            return []
+        return await asyncio.to_thread(
+            self._list_file_urls_older_than,
+            cutoff.timestamp(),
+            limit,
+        )
+
     def _managed_path(self, file_url: str) -> Path | None:
         if not file_url or not file_url.startswith(f"{self.base_url}/"):
             return None
@@ -52,6 +67,23 @@ class LocalStorage(StorageBackend):
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "wb") as f:
             f.write(data)
+
+    def _list_file_urls_older_than(self, cutoff_timestamp: float, limit: int) -> list[str]:
+        base = Path(self.base_dir).resolve()
+        if not base.exists():
+            return []
+        if not base.is_dir():
+            raise NotADirectoryError(base)
+
+        candidates: list[tuple[float, str]] = []
+        for file_path in base.iterdir():
+            file_stat = file_path.stat(follow_symlinks=False)
+            if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_mtime >= cutoff_timestamp:
+                continue
+            candidates.append((file_stat.st_mtime, file_path.name))
+
+        candidates.sort()
+        return [f"{self.base_url}/{filename}" for _, filename in candidates[:limit]]
 
     def _delete_file(self, file_path: Path) -> bool:
         # 文件不存在静默并返回 False（可能已删）；存在则删除，失败仍抛 OSError。

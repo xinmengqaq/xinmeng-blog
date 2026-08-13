@@ -1,4 +1,6 @@
 import asyncio
+import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -90,6 +92,32 @@ def test_delete_returns_whether_a_managed_file_was_removed(tmp_path):
 
     assert asyncio.run(storage.delete(file_url)) is True
     assert asyncio.run(storage.delete(file_url)) is False
+
+
+def test_list_old_file_urls_returns_oldest_regular_files_within_limit(tmp_path):
+    now = datetime(2026, 8, 13, tzinfo=timezone.utc)
+    storage = LocalStorage(
+        base_dir=str(tmp_path / "users" / "avatar"),
+        base_url="/files/users/avatar",
+    )
+    oldest_url = asyncio.run(storage.save(b"oldest", "oldest.png"))
+    older_url = asyncio.run(storage.save(b"older", "older.png"))
+    fresh_url = asyncio.run(storage.save(b"fresh", "fresh.png"))
+    base_dir = tmp_path / "users" / "avatar"
+    nested_dir = base_dir / "nested"
+    nested_dir.mkdir()
+
+    os.utime(base_dir / "oldest.png", ((now - timedelta(hours=3)).timestamp(),) * 2)
+    os.utime(base_dir / "older.png", ((now - timedelta(hours=2)).timestamp(),) * 2)
+    os.utime(base_dir / "fresh.png", ((now - timedelta(minutes=30)).timestamp(),) * 2)
+    os.utime(nested_dir, ((now - timedelta(hours=4)).timestamp(),) * 2)
+
+    file_urls = asyncio.run(
+        storage.list_file_urls_older_than(now - timedelta(hours=1), limit=2),
+    )
+
+    assert file_urls == [oldest_url, older_url]
+    assert fresh_url not in file_urls
 
 
 @pytest.mark.parametrize(

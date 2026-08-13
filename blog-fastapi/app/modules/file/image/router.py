@@ -24,6 +24,7 @@ from app.modules.file.image.schemas import (
 )
 from app.modules.file.image.service import (
     MAX_CONTENT_IMAGE_SIZE,
+    MAX_USER_AVATAR_SIZE,
     prepare_image,
 )
 from app.modules.file.storage.dependencies import (
@@ -35,8 +36,8 @@ from app.modules.file.storage.dependencies import (
 router = APIRouter(prefix="/articles", tags=["文件"], dependencies=[Depends(get_current_admin)],)
 
 
-async def _read_upload_content(file: UploadFile) -> bytes:
-    return await file.read(MAX_CONTENT_IMAGE_SIZE + 1)
+async def _read_upload_content(file: UploadFile, limit: int = MAX_CONTENT_IMAGE_SIZE) -> bytes:
+    return await file.read(limit + 1)
 
 
 @router.post(
@@ -146,7 +147,7 @@ async def upload_user_avatar(
     file: Annotated[UploadFile, File(description="普通用户头像图片")],
     service: UserAvatarImageServiceDep,
 ) -> ApiResponse[AvatarResponse]:
-    content = await _read_upload_content(file)
+    content = await _read_upload_content(file, MAX_USER_AVATAR_SIZE)
     file_url = await service.update_user_avatar(
         user_id,
         ImageUploadData(

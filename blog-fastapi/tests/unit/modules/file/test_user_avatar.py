@@ -12,7 +12,7 @@ from app.db.session import get_db_session
 from app.main import app
 from app.modules.file.image import service
 from app.modules.file.image.schemas import ImageUploadData
-from app.modules.file.image.service import ImageService
+from app.modules.file.image.service import ImageService, MAX_USER_AVATAR_SIZE
 from app.modules.file.storage.dependencies import get_user_avatar_storage
 from app.modules.file.storage.local_disk import LocalStorage
 from app.modules.user.dependencies import get_current_user
@@ -65,6 +65,25 @@ def test_upload_user_avatar_rejects_gif(monkeypatch):
                     filename="avatar.gif",
                     content_type="image/gif",
                     content=_make_gif_bytes(),
+                ),
+            )
+        )
+
+    service.get_user.assert_not_awaited()
+
+
+def test_upload_user_avatar_rejects_file_over_5mb(monkeypatch):
+    monkeypatch.setattr(service, "get_user", AsyncMock())
+    oversized = b"x" * (MAX_USER_AVATAR_SIZE + 1)
+
+    with pytest.raises(BusinessException, match="文件大小超过限制"):
+        asyncio.run(
+            ImageService(AsyncMock(), AsyncMock()).update_user_avatar(
+                7,
+                ImageUploadData(
+                    filename="avatar.png",
+                    content_type="image/png",
+                    content=oversized,
                 ),
             )
         )
