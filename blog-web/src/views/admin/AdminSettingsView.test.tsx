@@ -10,7 +10,7 @@ import {
   updateAdminProfile,
   validateAdminToken,
 } from '@/api/admin'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO } from '@/types/auth'
 
 import { AdminSettingsView } from './AdminSettingsView'
@@ -60,11 +60,11 @@ describe('管理员设置页', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   it('保存文字资料成功后应更新 currentUser', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(getAdminProfile).mockResolvedValue(adminVO())
     vi.mocked(updateAdminProfile).mockResolvedValue(
       adminVO({
@@ -88,7 +88,7 @@ describe('管理员设置页', () => {
       username: 'xinmengqaq',
       name: '新梦梦',
     })
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       username: 'xinmengqaq',
       name: '新梦梦',
       avatar: '/files/avatar.png',
@@ -96,7 +96,7 @@ describe('管理员设置页', () => {
   })
 
   it('管理员资料区不显示头像地址输入', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO({ avatar: null }))
+    useAdminAuthStore.getState().setAuth('old-token', adminVO({ avatar: null }))
     vi.mocked(getAdminProfile).mockResolvedValue(adminVO({ avatar: null }))
     renderSettingsView()
 
@@ -107,7 +107,7 @@ describe('管理员设置页', () => {
   })
 
   it('修改密码成功后应清理登录态并跳转 /admin/login', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(getAdminProfile).mockResolvedValue(adminVO())
     vi.mocked(changeAdminPassword).mockResolvedValue(undefined)
     renderSettingsView()
@@ -128,11 +128,11 @@ describe('管理员设置页', () => {
       oldPassword: 'old-pass',
       newPassword: 'new-pass',
     })
-    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAdminAuthStore.getState().isAuthenticated).toBe(false)
   })
 
   it('校验 Token 成功后应显示有效', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(getAdminProfile).mockResolvedValue(adminVO())
     vi.mocked(validateAdminToken).mockResolvedValue({ valid: true })
     renderSettingsView()
@@ -148,7 +148,7 @@ describe('管理员设置页', () => {
 
   it('刷新 Token 成功后应只更新 token 不改 currentUser', async () => {
     const currentUser = adminVO()
-    useAuthStore.getState().setAuth('old-token', currentUser)
+    useAdminAuthStore.getState().setAuth('old-token', currentUser)
     vi.mocked(getAdminProfile).mockResolvedValue(currentUser)
     vi.mocked(refreshAdminToken).mockResolvedValue({ token: 'new-token' })
     renderSettingsView()
@@ -158,9 +158,9 @@ describe('管理员设置页', () => {
     fireEvent.click(screen.getByRole('button', { name: '刷新 Token' }))
 
     await waitFor(() => {
-      expect(useAuthStore.getState().token).toBe('new-token')
+      expect(useAdminAuthStore.getState().token).toBe('new-token')
     })
-    expect(useAuthStore.getState().currentUser).toEqual({
+    expect(useAdminAuthStore.getState().currentUser).toEqual({
       id: 1,
       username: 'admin',
       name: '梦梦',
@@ -171,7 +171,7 @@ describe('管理员设置页', () => {
   })
 
   it('Token 校验或刷新遇到 401 后应清理登录态', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(getAdminProfile).mockResolvedValue(adminVO())
     vi.mocked(validateAdminToken).mockRejectedValue({
       code: '401',
@@ -185,6 +185,6 @@ describe('管理员设置页', () => {
 
     await screen.findByText('登录页测试落点')
 
-    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAdminAuthStore.getState().isAuthenticated).toBe(false)
   })
 })

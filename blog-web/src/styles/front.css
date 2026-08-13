@@ -669,11 +669,7 @@
   position: relative;
   z-index: 3;
 }
-.list-banner p {
-  margin-bottom: 14px;
-  color: rgb(255 255 255 / 82%);
-  font: 500 18px/1.5 var(--front-font-family);
-}
+
 .list-banner h1 {
   margin: 0;
   font: 700 44px/1 var(--front-font-family);

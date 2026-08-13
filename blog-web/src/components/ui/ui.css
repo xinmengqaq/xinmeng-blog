@@ -266,9 +266,87 @@
   color: var(--color-accent-hover);
 }
 
+.ui-toast {
+  align-items: center;
+  border: 1px solid;
+  border-radius: 6px;
+  box-shadow: 0 16px 42px rgb(43 42 40 / 22%);
+  color: #fff;
+  display: grid;
+  font-size: 15px;
+  font-weight: 580;
+  gap: 10px;
+  grid-template-columns: 22px minmax(0, 1fr) 36px;
+  left: 50%;
+  line-height: 1.45;
+  max-width: min(460px, calc(100vw - 32px));
+  min-height: 52px;
+  padding: 7px 7px 7px 14px;
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top));
+  transform-origin: top center;
+  translate: -50% 0;
+  width: max-content;
+  z-index: 1400;
+}
+
+.ui-toast--success {
+  background: #28704c;
+  border-color: #3f8966;
+}
+
+.ui-toast--error {
+  background: #b63b3b;
+  border-color: #cf5a5a;
+}
+
+.ui-toast__status-icon {
+  height: 21px;
+  width: 21px;
+}
+
+.ui-toast__message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-toast__close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  opacity: 0.82;
+  padding: 0;
+  width: 36px;
+}
+
+.ui-toast__close:hover,
+.ui-toast__close:focus-visible {
+  background: rgb(255 255 255 / 16%);
+  opacity: 1;
+}
+
+.ui-toast__close:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 84%);
+  outline-offset: 1px;
+}
+
+.ui-toast__close svg {
+  height: 18px;
+  width: 18px;
+}
+
 .ui-modal {
+  display: grid;
   inset: 0;
   min-height: 100dvh;
+  padding: 20px;
+  place-items: center;
   pointer-events: none;
   position: fixed;
   width: 100%;
@@ -277,7 +355,6 @@
 
 .ui-modal__backdrop {
   background: rgb(43 42 40 / 38%);
-  border: 0;
   cursor: default;
   inset: 0;
   pointer-events: auto;
@@ -291,14 +368,16 @@
   box-shadow: var(--shadow-lg);
   display: grid;
   gap: 20px;
-  left: 50%;
   max-width: min(420px, calc(100vw - 40px));
   padding: 24px;
   pointer-events: auto;
-  position: fixed;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
   width: 100%;
+}
+
+.ui-modal__panel[aria-busy='true'] .ui-modal__content,
+.ui-modal__panel[aria-busy='true'] .ui-modal__footer {
+  cursor: wait;
 }
 
 .ui-modal__header {

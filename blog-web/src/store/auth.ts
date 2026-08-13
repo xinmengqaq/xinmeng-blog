@@ -6,7 +6,7 @@ import { storage } from '@/utils/storage'
 const TOKEN_KEY = 'blog-web:token'
 const USER_KEY = 'blog-web:user'
 
-type AuthState = {
+type AdminAuthState = {
   token: string | null
   currentUser: CurrentUser | null
   isAuthenticated: boolean
@@ -20,7 +20,7 @@ type AuthState = {
 const getInitialToken = () => storage.get<string>(TOKEN_KEY)
 const getInitialUser = () => storage.get<CurrentUser>(USER_KEY)
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAdminAuthStore = create<AdminAuthState>((set) => ({
   token: getInitialToken(),
   currentUser: getInitialUser(),
   isAuthenticated: Boolean(getInitialToken()),

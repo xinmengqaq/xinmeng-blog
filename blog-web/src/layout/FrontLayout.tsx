@@ -5,11 +5,13 @@ import { FrontHeader } from '@/components/front/layout/FrontHeader'
 import { FrontFooter } from '@/components/front/layout/FrontFooter'
 import { FrontPageScrollbar } from '@/components/front/layout/FrontPageScrollbar'
 import { FrontLive2DWidget } from '@/components/front/live2d'
+import { FloatingMusicPlayer } from '@/components/front/music/FloatingMusicPlayer'
 import { FrontAtmosphere } from '@/components/front/atmosphere/FrontAtmosphere'
 import { PageMotion } from '@/components/front/atmosphere/PageMotion'
 import { PageTransition } from '@/components/front/atmosphere/PageTransition'
 import { frontSite } from '@/config/frontSite'
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
+import { FrontMusicPlayerProvider } from '@/hooks/front/musicPlayerContext'
 import { usePageTransitionActive } from '@/hooks/front/pageTransition'
 import {
   FrontHomeHeroSettledContext,
@@ -57,21 +59,24 @@ export const FrontLayout = () => {
   return (
     <FrontHomeHeroSettledContext.Provider value={reportHomeHeroSettled}>
       <FrontPageTransitionContext.Provider value={pageTransitionActive}>
-        <div
-          className={`app-shell app-shell--front ${motionAllowed ? 'front-motion-is-enabled' : 'front-motion-is-static'}`}
-        >
-          <PageTransition active={pageTransitionActive} />
-          <FrontHeader />
-          <main className="app-main">
-            <PageMotion>
-              <Outlet />
-            </PageMotion>
-          </main>
-          <FrontFooter />
-          <FrontAtmosphere />
-          <FrontPageScrollbar />
-          <FrontLive2DWidget />
-        </div>
+        <FrontMusicPlayerProvider>
+          <div
+            className={`app-shell app-shell--front ${motionAllowed ? 'front-motion-is-enabled' : 'front-motion-is-static'}`}
+          >
+            <PageTransition active={pageTransitionActive} />
+            <FrontHeader />
+            <main className="app-main">
+              <PageMotion>
+                <Outlet />
+              </PageMotion>
+            </main>
+            <FrontFooter />
+            <FrontAtmosphere />
+            <FrontPageScrollbar />
+            <FloatingMusicPlayer />
+            <FrontLive2DWidget />
+          </div>
+        </FrontMusicPlayerProvider>
       </FrontPageTransitionContext.Provider>
     </FrontHomeHeroSettledContext.Provider>
   )

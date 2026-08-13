@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 
 import { AdminSidebar } from './AdminSidebar'
 import { AdminTopbar } from './AdminTopbar'
@@ -11,7 +11,7 @@ type AdminShellProps = {
 }
 
 export const AdminShell = ({ children }: AdminShellProps) => {
-  const currentUser = useAuthStore((state) => state.currentUser)
+  const currentUser = useAdminAuthStore((state) => state.currentUser)
 
   useEffect(() => {
     document.documentElement.classList.add('admin-shell-active')

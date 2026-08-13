@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { AdminAvatar } from '@/components/admin'
 import { Button, ErrorState, LoadingState, PageHeader } from '@/components/ui'
 import { useAdminProfileQuery } from '@/queries/admin'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import { toApiError } from '@/utils/request'
 
 import './adminPages.css'
 
 export const DashboardView = () => {
   const navigate = useNavigate()
-  const token = useAuthStore((state) => state.token)
-  const currentUser = useAuthStore((state) => state.currentUser)
+  const token = useAdminAuthStore((state) => state.token)
+  const currentUser = useAdminAuthStore((state) => state.currentUser)
   const profileQuery = useAdminProfileQuery({
     enabled: Boolean(token && !currentUser),
   })

@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { FrontSceneBanner } from '@/components/front/layout/FrontSceneBanner'
+import { HeroMusicPlayer } from './HeroMusicPlayer'
 import { FrontSiteBackground } from '@/components/front/layout/FrontSiteBackground'
 import {
   FrontAssetImage,
@@ -167,6 +168,7 @@ export const HomeStationHero = () => {
           </div>
         </div>
       </div>
+      <HeroMusicPlayer />
     </FrontSceneBanner>
   )
 }

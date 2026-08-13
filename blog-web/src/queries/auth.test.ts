@@ -11,7 +11,7 @@ import {
   updateAdminProfile,
   validateAdminToken,
 } from '@/api/admin'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO } from '@/types/auth'
 
 import { useLoginMutation } from './auth'
@@ -62,7 +62,7 @@ describe('后台登录 Query', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   it('后台登录成功后应从 AdminVO 保存 Token 和管理员资料', async () => {
@@ -79,8 +79,8 @@ describe('后台登录 Query', () => {
       captchaCode: 'A2B3',
     })
 
-    expect(useAuthStore.getState().token).toBe('token-1')
-    expect(useAuthStore.getState().currentUser).toEqual({
+    expect(useAdminAuthStore.getState().token).toBe('token-1')
+    expect(useAdminAuthStore.getState().currentUser).toEqual({
       id: 1,
       username: 'admin',
       name: '梦梦',
@@ -94,7 +94,7 @@ describe('管理员资料 Query', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   it('加载管理员资料成功后应更新 currentUser', async () => {
@@ -106,7 +106,7 @@ describe('管理员资料 Query', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       name: '新梦梦',
       username: 'admin',
       role: 'admin',
@@ -114,7 +114,7 @@ describe('管理员资料 Query', () => {
   })
 
   it('保存管理员资料成功后应更新 currentUser', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(updateAdminProfile).mockResolvedValue(
       adminVO({
         username: 'xinmengqaq',
@@ -132,8 +132,8 @@ describe('管理员资料 Query', () => {
       name: '新梦梦',
     })
 
-    expect(useAuthStore.getState().token).toBe('old-token')
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().token).toBe('old-token')
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       username: 'xinmengqaq',
       name: '新梦梦',
       avatar: '/files/new.png',
@@ -141,7 +141,7 @@ describe('管理员资料 Query', () => {
   })
 
   it('修改密码成功后应清理登录态', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(changeAdminPassword).mockResolvedValue(undefined)
 
     const { result } = renderHook(() => useChangeAdminPasswordMutation(), {
@@ -153,9 +153,9 @@ describe('管理员资料 Query', () => {
       newPassword: 'new-pass',
     })
 
-    expect(useAuthStore.getState().isAuthenticated).toBe(false)
-    expect(useAuthStore.getState().token).toBeNull()
-    expect(useAuthStore.getState().currentUser).toBeNull()
+    expect(useAdminAuthStore.getState().isAuthenticated).toBe(false)
+    expect(useAdminAuthStore.getState().token).toBeNull()
+    expect(useAdminAuthStore.getState().currentUser).toBeNull()
   })
 
   it('校验 Token 成功后应返回有效结果', async () => {
@@ -169,7 +169,7 @@ describe('管理员资料 Query', () => {
   })
 
   it('刷新 Token 成功后应只更新 token 不改 currentUser', async () => {
-    useAuthStore.getState().setAuth('old-token', adminVO())
+    useAdminAuthStore.getState().setAuth('old-token', adminVO())
     vi.mocked(refreshAdminToken).mockResolvedValue({ token: 'new-token' })
 
     const { result } = renderHook(() => useRefreshAdminTokenMutation(), {
@@ -178,8 +178,8 @@ describe('管理员资料 Query', () => {
 
     await result.current.mutateAsync()
 
-    expect(useAuthStore.getState().token).toBe('new-token')
-    expect(useAuthStore.getState().currentUser).toEqual({
+    expect(useAdminAuthStore.getState().token).toBe('new-token')
+    expect(useAdminAuthStore.getState().currentUser).toEqual({
       id: 1,
       username: 'admin',
       name: '梦梦',

@@ -13,10 +13,7 @@ import {
 } from 'react-router-dom'
 
 import { AdminAvatar } from '@/components/admin'
-import {
-  ImageCropDialog,
-  ImageEditorToolbar,
-} from '@/components/admin/image-upload'
+import { ImageCropDialog, ImageEditorToolbar } from '@/components/image-editor'
 import { Alert, Button, ConfirmDialog, FormField, Modal } from '@/components/ui'
 import type { AdminAvatarChange, ImageDraft } from '@/types/file'
 

@@ -4,18 +4,27 @@ import { AdminLayout } from '@/layout/AdminLayout'
 import { BlankLayout } from '@/layout/BlankLayout'
 import { FrontLayout } from '@/layout/FrontLayout'
 import { ArticleEditorRoute } from '@/router/ArticleEditorRoute'
-import { RouteGuard } from '@/router/guards'
+import {
+  AdminRouteGuard,
+  UserGuestRoute,
+  UserRouteGuard,
+} from '@/router/guards'
 import { AdminSettingsView } from '@/views/admin/AdminSettingsView'
 import { ArticleListView as AdminArticleListView } from '@/views/admin/articles/ArticleListView'
 import { CategoryListView } from '@/views/admin/taxonomy/CategoryListView'
 import { TagListView } from '@/views/admin/taxonomy/TagListView'
 import { DashboardView } from '@/views/admin/DashboardView'
 import { LoginView } from '@/views/admin/LoginView'
+import { MusicManagementView } from '@/views/admin/music/MusicManagementView'
 import { SiteSettingsView } from '@/views/admin/SiteSettingsView'
 import { NotFoundView } from '@/views/error/NotFoundView'
 import { HomeView } from '@/views/front/HomeView'
 import { ArticleListView as FrontArticleListView } from '@/views/front/articles/ArticleListView'
 import { ArticleDetailView } from '@/views/front/article-detail/ArticleDetailView'
+import { UserForgotPasswordView } from '@/views/front/account/ForgotPasswordView'
+import { UserLoginView } from '@/views/front/account/LoginView'
+import { UserRegisterView } from '@/views/front/account/RegisterView'
+import { UserProfileView } from '@/views/front/account/ProfileView'
 
 export const routes: RouteObject[] = [
   {
@@ -24,10 +33,27 @@ export const routes: RouteObject[] = [
       { path: '/', element: <HomeView /> },
       { path: '/articles', element: <FrontArticleListView /> },
       { path: '/articles/:id', element: <ArticleDetailView /> },
+      {
+        element: <UserRouteGuard />,
+        children: [{ path: '/profile', element: <UserProfileView /> }],
+      },
     ],
   },
   {
-    element: <RouteGuard guestOnly />,
+    element: <UserGuestRoute />,
+    children: [
+      {
+        element: <BlankLayout />,
+        children: [
+          { path: '/login', element: <UserLoginView /> },
+          { path: '/register', element: <UserRegisterView /> },
+          { path: '/forgot-password', element: <UserForgotPasswordView /> },
+        ],
+      },
+    ],
+  },
+  {
+    element: <AdminRouteGuard guestOnly />,
     children: [
       {
         element: <BlankLayout />,
@@ -36,7 +62,7 @@ export const routes: RouteObject[] = [
     ],
   },
   {
-    element: <RouteGuard requiresAuth />,
+    element: <AdminRouteGuard requiresAuth />,
     children: [
       {
         element: <AdminLayout />,
@@ -45,6 +71,7 @@ export const routes: RouteObject[] = [
           { path: '/admin/settings/admin', element: <AdminSettingsView /> },
           { path: '/admin/settings/site', element: <SiteSettingsView /> },
           { path: '/admin/articles', element: <AdminArticleListView /> },
+          { path: '/admin/music', element: <MusicManagementView /> },
           {
             path: '/admin/articles/categories',
             element: <CategoryListView />,

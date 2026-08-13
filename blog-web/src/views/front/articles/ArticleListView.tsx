@@ -79,7 +79,6 @@ export const ArticleListView = () => {
         stationLabel={frontSite.stationFallback}
       >
         <div className="front-container">
-          <p>按时间翻阅，找到想读的那一篇</p>
           <h1>文章</h1>
         </div>
       </FrontSceneBanner>

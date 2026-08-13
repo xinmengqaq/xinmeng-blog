@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getAdminCaptcha, login } from '@/api/auth'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO } from '@/types/auth'
 
 import { LoginView } from './LoginView'
@@ -58,7 +58,7 @@ describe('后台登录页', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   const fillLoginForm = async (password: string) => {
@@ -88,8 +88,8 @@ describe('后台登录页', () => {
       captchaID: 'captcha-id-1',
       captchaCode: 'a2b3',
     })
-    expect(useAuthStore.getState().token).toBe('token-1')
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().token).toBe('token-1')
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       username: 'admin',
       name: '梦梦',
       role: 'admin',

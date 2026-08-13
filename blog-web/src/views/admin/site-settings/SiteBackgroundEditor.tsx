@@ -1,10 +1,7 @@
 import { PencilLine, Save, Trash2, Upload } from 'lucide-react'
 import { type RefObject, useRef, useState } from 'react'
 
-import {
-  ImageCropDialog,
-  ImageEditorToolbar,
-} from '@/components/admin/image-upload'
+import { ImageCropDialog, ImageEditorToolbar } from '@/components/image-editor'
 import {
   Alert,
   Button,

@@ -73,10 +73,36 @@ springboot/
 
 ## 请求分发
 
-前端开发服务器监听 `5173` 端口：
+Nginx 将文件和音乐模块转发到 FastAPI `8000`，其余业务接口转发到 Spring Boot `9090`：
 
-- `/api/admin/files` 和 `/files` 转发到 FastAPI `8000`
-- 其他 `/api` 请求转发到 Spring Boot `9090`
+```nginx
+location ^~ /api/admin/files/ {
+    client_max_body_size 12m;
+    proxy_pass http://fastapi:8000;
+}
+
+location ^~ /api/user/files/ {
+    client_max_body_size 5m;
+    proxy_pass http://fastapi:8000;
+}
+
+location ^~ /api/admin/music/ {
+    client_max_body_size 101m;
+    proxy_pass http://fastapi:8000;
+}
+
+location ^~ /api/music/ {
+    proxy_pass http://fastapi:8000;
+}
+
+location ^~ /files/ {
+    proxy_pass http://fastapi:8000;
+}
+
+location ^~ /api/ {
+    proxy_pass http://springboot:9090;
+}
+```
 
 Spring Boot 与 FastAPI 使用同一个 PostgreSQL 数据库和同一份 JWT 密钥。
 

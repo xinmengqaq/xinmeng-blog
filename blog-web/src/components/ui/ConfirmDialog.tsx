@@ -26,12 +26,13 @@ export const ConfirmDialog = ({
   onCancel,
 }: ConfirmDialogProps) => (
   <Modal
+    locked={loading}
     open={open}
     title={title}
     onClose={onCancel}
     footer={
       <>
-        <Button onClick={onCancel} variant="secondary">
+        <Button disabled={loading} onClick={onCancel} variant="secondary">
           {cancelText}
         </Button>
         <Button

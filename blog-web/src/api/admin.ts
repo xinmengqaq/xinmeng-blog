@@ -5,18 +5,18 @@ import type {
   UpdateAdminProfileParams,
   ValidateTokenResult,
 } from '@/types/auth'
-import { request } from '@/utils/request'
+import { adminRequest } from '@/utils/request'
 
-export const getAdminProfile = () => request.get<AdminVO>('/admin/profile')
+export const getAdminProfile = () => adminRequest.get<AdminVO>('/admin/profile')
 
 export const updateAdminProfile = (params: UpdateAdminProfileParams) =>
-  request.put<AdminVO>('/admin/profile', params)
+  adminRequest.put<AdminVO>('/admin/profile', params)
 
 export const changeAdminPassword = (params: ChangeAdminPasswordParams) =>
-  request.patch<void>('/admin/profile/password', params)
+  adminRequest.patch<void>('/admin/profile/password', params)
 
 export const validateAdminToken = () =>
-  request.get<ValidateTokenResult>('/admin/validate')
+  adminRequest.get<ValidateTokenResult>('/admin/validate')
 
 export const refreshAdminToken = () =>
-  request.post<RefreshTokenResult>('/admin/refresh')
+  adminRequest.post<RefreshTokenResult>('/admin/refresh')

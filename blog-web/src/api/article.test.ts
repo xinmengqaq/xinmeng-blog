@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { request } from '@/utils/request'
+import { adminRequest } from '@/utils/request'
 
 import {
   createArticle,
@@ -15,7 +15,7 @@ import {
 } from './article'
 
 vi.mock('@/utils/request', () => ({
-  request: {
+  adminRequest: {
     delete: vi.fn(),
     get: vi.fn(),
     post: vi.fn(),
@@ -42,7 +42,7 @@ describe('文章 API', () => {
     getArticlePage(params)
 
     // Then 前端应调用 GET /admin/articles，并只传递后端支持的查询参数
-    expect(request.get).toHaveBeenCalledWith('/admin/articles', {
+    expect(adminRequest.get).toHaveBeenCalledWith('/admin/articles', {
       params,
     })
   })
@@ -55,7 +55,7 @@ describe('文章 API', () => {
     getArticleDetail(articleId)
 
     // Then 前端应调用 GET /admin/articles/:id，并返回文章标题、摘要、正文、封面和状态
-    expect(request.get).toHaveBeenCalledWith('/admin/articles/12')
+    expect(adminRequest.get).toHaveBeenCalledWith('/admin/articles/12')
   })
 
   it('新增文章时应使用 POST /admin/articles 并返回新文章 ID', () => {
@@ -72,7 +72,7 @@ describe('文章 API', () => {
     createArticle(params)
 
     // Then 前端应调用 POST /admin/articles，并从响应中读取新文章 ID
-    expect(request.post).toHaveBeenCalledWith('/admin/articles', params)
+    expect(adminRequest.post).toHaveBeenCalledWith('/admin/articles', params)
   })
 
   it('修改文章时应使用 PUT /admin/articles/:id 并返回修改后的文章', () => {
@@ -87,7 +87,7 @@ describe('文章 API', () => {
     updateArticle(8, params)
 
     // Then 前端应调用 PUT /admin/articles/:id，并用响应刷新当前文章详情
-    expect(request.put).toHaveBeenCalledWith('/admin/articles/8', params)
+    expect(adminRequest.put).toHaveBeenCalledWith('/admin/articles/8', params)
   })
 
   it('删除文章时应使用 DELETE /admin/articles/:id', () => {
@@ -98,7 +98,7 @@ describe('文章 API', () => {
     deleteArticle(articleId)
 
     // Then 前端应调用 DELETE /admin/articles/:id，并在成功后刷新列表或返回列表页
-    expect(request.delete).toHaveBeenCalledWith('/admin/articles/9')
+    expect(adminRequest.delete).toHaveBeenCalledWith('/admin/articles/9')
   })
 
   it('组合筛选文章时应传递分类和标签参数', () => {
@@ -112,7 +112,7 @@ describe('文章 API', () => {
       tagId: 6,
     })
     // Then 请求应传递后端支持的 categoryId 和 tagId 筛选参数
-    expect(request.get).toHaveBeenCalledWith('/admin/articles', {
+    expect(adminRequest.get).toHaveBeenCalledWith('/admin/articles', {
       params: {
         page: 1,
         size: 10,
@@ -128,7 +128,7 @@ describe('文章 API', () => {
     // When 前端提交状态变更
     updateArticleStatus(8, 'published')
     // Then 请求应调用文章状态接口并提交目标 status
-    expect(request.patch).toHaveBeenCalledWith('/admin/articles/8/status', {
+    expect(adminRequest.patch).toHaveBeenCalledWith('/admin/articles/8/status', {
       status: 'published',
     })
   })
@@ -138,7 +138,7 @@ describe('文章 API', () => {
     // When 前端提交置顶变更
     updateArticleTop(8, true)
     // Then 请求应调用文章置顶接口并提交 isTop
-    expect(request.patch).toHaveBeenCalledWith('/admin/articles/8/top', {
+    expect(adminRequest.patch).toHaveBeenCalledWith('/admin/articles/8/top', {
       isTop: true,
     })
   })
@@ -148,7 +148,7 @@ describe('文章 API', () => {
     // When 前端提交推荐变更
     updateArticleRecommend(8, true)
     // Then 请求应调用文章推荐接口并提交 isRecommend
-    expect(request.patch).toHaveBeenCalledWith('/admin/articles/8/recommend', {
+    expect(adminRequest.patch).toHaveBeenCalledWith('/admin/articles/8/recommend', {
       isRecommend: true,
     })
   })
@@ -158,7 +158,7 @@ describe('文章 API', () => {
     // When 前端提交批量删除请求
     batchDeleteArticles([2, 5])
     // Then 请求应只包含选中的文章 ids
-    expect(request.post).toHaveBeenCalledWith('/admin/articles/batch-delete', {
+    expect(adminRequest.post).toHaveBeenCalledWith('/admin/articles/batch-delete', {
       ids: [2, 5],
     })
   })

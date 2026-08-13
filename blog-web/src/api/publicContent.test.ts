@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { request } from '@/utils/request'
+import { publicRequest } from '@/utils/request'
 
 import {
   getArticleFilterMeta,
@@ -13,7 +13,7 @@ import {
 } from './publicContent'
 
 vi.mock('@/utils/request', () => ({
-  request: {
+  publicRequest: {
     get: vi.fn(),
     post: vi.fn(),
   },
@@ -27,7 +27,7 @@ describe('公开内容 API', () => {
     // When 发起首页数据请求
     getPublicHome()
     // Then 请求应访问 GET /home 且不得包含 /admin/
-    expect(request.get).toHaveBeenCalledWith('/home')
+    expect(publicRequest.get).toHaveBeenCalledWith('/home')
   })
 
   it('文章分页请求按公开契约序列化筛选参数', () => {
@@ -43,7 +43,7 @@ describe('公开内容 API', () => {
       month: 7,
     })
     // Then 请求应访问 GET /articles，并以逗号分隔标签且不发送无效年月参数
-    expect(request.get).toHaveBeenCalledWith('/articles', {
+    expect(publicRequest.get).toHaveBeenCalledWith('/articles', {
       params: {
         page: 2,
         size: 10,
@@ -56,7 +56,7 @@ describe('公开内容 API', () => {
     })
 
     getPublicArticlePage({ page: 1, size: 10, tagIds: [], month: 5 })
-    expect(request.get).toHaveBeenLastCalledWith('/articles', {
+    expect(publicRequest.get).toHaveBeenLastCalledWith('/articles', {
       params: { page: 1, size: 10 },
     })
   })
@@ -69,7 +69,7 @@ describe('公开内容 API', () => {
     getPublicCategories()
     getPublicTags()
     // Then 所有请求都应访问公开接口且不得复用任何 /admin/ 路径
-    expect(vi.mocked(request.get).mock.calls).toEqual([
+    expect(vi.mocked(publicRequest.get).mock.calls).toEqual([
       ['/articles/12'],
       ['/articles/meta'],
       ['/categories'],
@@ -82,6 +82,6 @@ describe('公开内容 API', () => {
     // When 发起点赞请求
     likePublicArticle(9)
     // Then 请求应由后端 Cookie 识别访客且前端请求体保持为空
-    expect(request.post).toHaveBeenCalledWith('/articles/9/like')
+    expect(publicRequest.post).toHaveBeenCalledWith('/articles/9/like')
   })
 })

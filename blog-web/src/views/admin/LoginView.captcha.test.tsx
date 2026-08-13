@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { getAdminCaptcha, login } from '@/api/auth'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO } from '@/types/auth'
 
 import { LoginView } from './LoginView'
@@ -64,7 +64,7 @@ describe('后台登录页验证码防护', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   it('打开登录页时应领取并展示验证码', async () => {

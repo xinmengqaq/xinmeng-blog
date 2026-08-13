@@ -25,7 +25,11 @@ export const FormField = ({
       {required ? <span className="ui-form-field__required">*</span> : null}
     </label>
     <div className="ui-form-field__control">{children}</div>
-    {error ? <p className="ui-form-field__error">{error}</p> : null}
+    {error ? (
+      <p className="ui-form-field__error" role="alert">
+        {error}
+      </p>
+    ) : null}
     {!error && hint ? <p className="ui-form-field__hint">{hint}</p> : null}
   </div>
 )

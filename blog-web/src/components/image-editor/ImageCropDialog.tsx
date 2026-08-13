@@ -8,10 +8,21 @@ import type { ImageDraft } from '@/types/file'
 import { createImageDraft } from '@/utils/imageDrafts'
 
 import { createCroppedImageBlob } from './cropImage'
+import {
+  clamp,
+  CROP_TARGETS,
+  DEFAULT_CONTENT_ASPECT,
+  formatFileSize,
+  getOutputType,
+  MAX_CONTENT_ASPECT,
+  MIN_CONTENT_ASPECT,
+  type ImageUploadTarget,
+} from './cropConfig'
+import { CropCloseConfirm } from './CropCloseConfirm'
 import { CropSidebar } from './CropSidebar'
 import './imageCropDialog.css'
 
-export type ImageUploadTarget = 'avatar' | 'cover' | 'background' | 'content'
+export type { ImageUploadTarget } from './cropConfig'
 
 type ImageCropDialogProps = {
   open: boolean
@@ -21,46 +32,7 @@ type ImageCropDialogProps = {
   onApply: (draft: ImageDraft) => void
 }
 
-type CropTargetConfig = {
-  title: string
-  aspect: number
-  cropShape: 'rect' | 'round'
-}
-
-const CROP_TARGETS: Record<ImageUploadTarget, CropTargetConfig> = {
-  avatar: { title: '裁剪头像', aspect: 1, cropShape: 'round' },
-  cover: { title: '裁剪文章封面', aspect: 16 / 9, cropShape: 'rect' },
-  background: { title: '裁剪站点背景', aspect: 12 / 5, cropShape: 'rect' },
-  content: { title: '裁剪正文图片', aspect: 4 / 3, cropShape: 'rect' },
-}
-
 const INITIAL_CROP: Point = { x: 0, y: 0 }
-const DEFAULT_CONTENT_ASPECT = 4 / 3
-const MIN_CONTENT_ASPECT = 0.25
-const MAX_CONTENT_ASPECT = 4
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), max)
-
-const getOutputType = (fileType: string): string => {
-  if (fileType === 'image/png' || fileType === 'image/webp') {
-    return fileType
-  }
-
-  return 'image/jpeg'
-}
-
-const formatFileSize = (size: number): string => {
-  if (size < 1024) {
-    return `${size} B`
-  }
-
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`
-  }
-
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`
-}
 
 export const ImageCropDialog = ({
   open,
@@ -78,6 +50,7 @@ export const ImageCropDialog = ({
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [applying, setApplying] = useState(false)
+  const [confirmingClose, setConfirmingClose] = useState(false)
   const previewUrlRef = useRef<string | null>(null)
   const hasSetInitialContentAspect = useRef(false)
 
@@ -92,9 +65,9 @@ export const ImageCropDialog = ({
 
   const requestClose = useCallback(() => {
     if (!applying) {
-      onClose()
+      setConfirmingClose(true)
     }
-  }, [applying, onClose])
+  }, [applying])
 
   const replacePreview = useCallback(
     (blob: Blob) => {
@@ -128,6 +101,7 @@ export const ImageCropDialog = ({
     setCroppedArea(null)
     setError(null)
     setApplying(false)
+    setConfirmingClose(false)
   }, [clearPreview, file, open, target])
 
   useEffect(() => clearPreview, [clearPreview])
@@ -229,9 +203,19 @@ export const ImageCropDialog = ({
 
   const previewSource = previewUrl ?? sourceUrl
 
+  if (confirmingClose) {
+    return (
+      <CropCloseConfirm
+        onContinue={() => setConfirmingClose(false)}
+        onDiscard={onClose}
+      />
+    )
+  }
+
   if (isGif) {
     return (
       <Modal
+        locked={applying}
         open
         title="确认正文 GIF"
         onClose={requestClose}
@@ -272,6 +256,7 @@ export const ImageCropDialog = ({
 
   return (
     <Modal
+      locked={applying}
       open
       title={cropConfig.title}
       onClose={requestClose}

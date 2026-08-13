@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 
+import { FrontAccountMenu } from '@/components/front/account/FrontAccountMenu'
+import { FrontPetalToggle } from '@/components/front/atmosphere/FrontPetalToggle'
 import {
   FrontBrandMark,
   FrontDropdownSurface,
@@ -8,7 +10,8 @@ import {
 } from '@/components/front/visual'
 import { frontSite } from '@/config/frontSite'
 import { usePublicCategoriesQuery } from '@/queries/publicContent'
-import { FrontPetalToggle } from '@/components/front/atmosphere/FrontPetalToggle'
+
+type OpenMenu = 'categories' | 'account' | null
 
 const canPreviewWithHover = () =>
   window.matchMedia('(min-width: 768px) and (hover: hover) and (pointer: fine)')
@@ -16,17 +19,18 @@ const canPreviewWithHover = () =>
 
 export const FrontHeader = () => {
   const [open, setOpen] = useState(false)
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
+  const categoryGroupRef = useRef<HTMLDivElement>(null)
   const categoryToggleRef = useRef<HTMLButtonElement>(null)
   const { pathname } = useLocation()
   const categories = usePublicCategoriesQuery()
   const articleActive = pathname.startsWith('/articles')
+  const categoriesOpen = openMenu === 'categories'
 
   const closeCategories = useCallback((restoreFocus = false) => {
-    setCategoriesOpen(false)
+    setOpenMenu(null)
     if (restoreFocus) {
       window.requestAnimationFrame(() => {
-        setCategoriesOpen(false)
         categoryToggleRef.current?.focus({ preventScroll: true })
       })
     }
@@ -34,7 +38,7 @@ export const FrontHeader = () => {
 
   useEffect(() => {
     setOpen(false)
-    setCategoriesOpen(false)
+    setOpenMenu(null)
   }, [pathname])
 
   useEffect(() => {
@@ -48,6 +52,17 @@ export const FrontHeader = () => {
 
     document.addEventListener('keydown', closeOnEscape)
     return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [categoriesOpen, closeCategories])
+
+  useEffect(() => {
+    if (!categoriesOpen) return
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!categoryGroupRef.current?.contains(event.target as Node)) {
+        closeCategories()
+      }
+    }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick)
   }, [categoriesOpen, closeCategories])
 
   return (
@@ -66,7 +81,10 @@ export const FrontHeader = () => {
           aria-label={open ? '关闭导航' : '打开导航'}
           title={open ? '关闭导航' : '打开导航'}
           aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => {
+            setOpenMenu(null)
+            setOpen((value) => !value)
+          }}
           type="button"
         >
           <FrontIcon name={open ? 'close' : 'menu'} size={24} />
@@ -87,9 +105,10 @@ export const FrontHeader = () => {
           </NavLink>
           <div
             className={`front-nav__group ${articleActive ? 'is-active' : ''}`}
+            ref={categoryGroupRef}
             onPointerEnter={(event) => {
               if (event.pointerType === 'mouse' && canPreviewWithHover()) {
-                setCategoriesOpen(true)
+                setOpenMenu('categories')
               }
             }}
             onPointerLeave={(event) => {
@@ -99,7 +118,7 @@ export const FrontHeader = () => {
             }}
             onFocusCapture={(event) => {
               if (!categoryToggleRef.current?.contains(event.target as Node)) {
-                setCategoriesOpen(true)
+                setOpenMenu('categories')
               }
             }}
             onBlurCapture={(event) => {
@@ -126,7 +145,7 @@ export const FrontHeader = () => {
               aria-label={categoriesOpen ? '收起文章分类' : '展开文章分类'}
               title={categoriesOpen ? '收起文章分类' : '展开文章分类'}
               aria-expanded={categoriesOpen}
-              onClick={() => setCategoriesOpen((value) => !value)}
+              onClick={() => setOpenMenu(categoriesOpen ? null : 'categories')}
               type="button"
             >
               <FrontIcon
@@ -151,7 +170,7 @@ export const FrontHeader = () => {
                     key={category.id}
                     to={`/articles?categoryId=${category.id}`}
                     onClick={() => {
-                      setCategoriesOpen(false)
+                      setOpenMenu(null)
                       setOpen(false)
                     }}
                   >
@@ -164,8 +183,30 @@ export const FrontHeader = () => {
               )}
             </FrontDropdownSurface>
           </div>
+          <div className="front-nav__mobile-account">
+            <FrontAccountMenu
+              mobile
+              onNavigate={() => {
+                setOpen(false)
+                setOpenMenu(null)
+              }}
+              onOpenChange={() => undefined}
+              open={false}
+            />
+          </div>
           <FrontPetalToggle variant="mobile" />
         </nav>
+        <div className="front-header__account-tools">
+          <FrontPetalToggle variant="desktop" />
+          <FrontAccountMenu
+            mobile={false}
+            onNavigate={() => setOpenMenu(null)}
+            onOpenChange={(nextOpen) =>
+              setOpenMenu(nextOpen ? 'account' : null)
+            }
+            open={openMenu === 'account'}
+          />
+        </div>
       </div>
     </header>
   )

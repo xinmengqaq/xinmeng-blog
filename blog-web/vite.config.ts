@@ -28,6 +28,18 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/api/user/files': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/api/admin/music': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/api/music': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/files': {
         target: 'http://localhost:8000',
         changeOrigin: true,

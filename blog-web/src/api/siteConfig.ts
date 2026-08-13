@@ -1,5 +1,5 @@
 import type { PublicSiteBackground } from '@/types/siteConfig'
-import { request } from '@/utils/request'
+import { publicRequest } from '@/utils/request'
 
 type PublicSiteBackgroundResponse = {
   backgroundUrl?: string | null
@@ -7,7 +7,7 @@ type PublicSiteBackgroundResponse = {
 
 export const getPublicSiteBackground =
   async (): Promise<PublicSiteBackground> => {
-    const response = await request.get<PublicSiteBackgroundResponse>(
+    const response = await publicRequest.get<PublicSiteBackgroundResponse>(
       '/site-config/background',
     )
 

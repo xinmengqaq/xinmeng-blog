@@ -14,6 +14,7 @@ export const usePublicSiteBackgroundQuery = () =>
   useQuery({
     queryKey: siteConfigQueryKeys.background(),
     queryFn: getPublicSiteBackground,
+    staleTime: Infinity,
   })
 
 const saveSiteBackground = async (

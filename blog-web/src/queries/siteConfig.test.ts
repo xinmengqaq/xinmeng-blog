@@ -75,6 +75,31 @@ describe('公开站点背景 Query', () => {
     })
   })
 
+  it('前台路由切换重新挂载时复用本次会话的背景缓存', async () => {
+    // Given 当前浏览器会话已经成功请求一次站点背景
+    vi.mocked(getPublicSiteBackground).mockResolvedValue({
+      backgroundUrl: '/files/site/background.webp',
+    })
+    const { Wrapper } = createWrapper()
+    const first = renderHook(() => usePublicSiteBackgroundQuery(), {
+      wrapper: Wrapper,
+    })
+    await waitFor(() => expect(first.result.current.isSuccess).toBe(true))
+    first.unmount()
+
+    // When 前台客户端路由跳转后背景组件重新挂载
+    const second = renderHook(() => usePublicSiteBackgroundQuery(), {
+      wrapper: Wrapper,
+    })
+    await waitFor(() => expect(second.result.current.isSuccess).toBe(true))
+
+    // Then 直接复用内存缓存，不重复发送头图请求
+    expect(second.result.current.data).toEqual({
+      backgroundUrl: '/files/site/background.webp',
+    })
+    expect(getPublicSiteBackground).toHaveBeenCalledTimes(1)
+  })
+
   it('背景 Query 失败不会丢弃已经成功的首页文章数据', async () => {
     // Given 首页文章查询已成功且背景请求发生错误
     // When TanStack Query 分别维护两条公开请求

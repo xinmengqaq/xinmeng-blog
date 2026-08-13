@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 
 import { login, logout } from '@/api/auth'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO, CurrentUser, LoginParams } from '@/types/auth'
 
 type LoginMutationResult = {
@@ -30,7 +30,7 @@ const loginWithCurrentUser = async (
 }
 
 export const useLoginMutation = () => {
-  const setAuth = useAuthStore((state) => state.setAuth)
+  const setAuth = useAdminAuthStore((state) => state.setAuth)
 
   return useMutation({
     mutationFn: loginWithCurrentUser,
@@ -39,7 +39,7 @@ export const useLoginMutation = () => {
 }
 
 export const useLogoutMutation = () => {
-  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const clearAuth = useAdminAuthStore((state) => state.clearAuth)
 
   return useMutation({
     mutationFn: logout,

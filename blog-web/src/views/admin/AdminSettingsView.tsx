@@ -17,7 +17,7 @@ import {
   useRefreshAdminTokenMutation,
   useValidateAdminTokenMutation,
 } from '@/queries/admin'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import { toApiError } from '@/utils/request'
 
 import { AdminProfileSection } from './admin-settings/AdminProfileSection'
@@ -38,7 +38,7 @@ const tokenStatusLabel: Record<TokenStatus, string> = {
 
 export const AdminSettingsView = () => {
   const navigate = useNavigate()
-  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const clearAuth = useAdminAuthStore((state) => state.clearAuth)
   const profileQuery = useAdminProfileQuery()
   const changePasswordMutation = useChangeAdminPasswordMutation()
   const validateTokenMutation = useValidateAdminTokenMutation()

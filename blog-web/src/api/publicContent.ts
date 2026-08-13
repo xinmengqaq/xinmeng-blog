@@ -9,7 +9,7 @@ import type {
   PublicHome,
   PublicTag,
 } from '@/types/publicContent'
-import { request } from '@/utils/request'
+import { publicRequest } from '@/utils/request'
 
 const isValidYear = (year: number | undefined): year is number =>
   Number.isInteger(year) && year! >= 1970 && year! <= 9999
@@ -37,23 +37,23 @@ const toArticlePageRequestParams = (params: PublicArticlePageParams) => {
   }
 }
 
-export const getPublicHome = () => request.get<PublicHome>('/home')
+export const getPublicHome = () => publicRequest.get<PublicHome>('/home')
 
 export const getPublicArticlePage = (params: PublicArticlePageParams) =>
-  request.get<PageResult<PublicArticleListItem>>('/articles', {
+  publicRequest.get<PageResult<PublicArticleListItem>>('/articles', {
     params: toArticlePageRequestParams(params),
   })
 
 export const getArticleFilterMeta = () =>
-  request.get<ArticleFilterMeta>('/articles/meta')
+  publicRequest.get<ArticleFilterMeta>('/articles/meta')
 
 export const getPublicArticleDetail = (id: number) =>
-  request.get<PublicArticleDetail>(`/articles/${id}`)
+  publicRequest.get<PublicArticleDetail>(`/articles/${id}`)
 
 export const getPublicCategories = () =>
-  request.get<PublicCategory[]>('/categories')
+  publicRequest.get<PublicCategory[]>('/categories')
 
-export const getPublicTags = () => request.get<PublicTag[]>('/tags')
+export const getPublicTags = () => publicRequest.get<PublicTag[]>('/tags')
 
 export const likePublicArticle = (id: number) =>
-  request.post<ArticleLikeResult>(`/articles/${id}/like`)
+  publicRequest.post<ArticleLikeResult>(`/articles/${id}/like`)

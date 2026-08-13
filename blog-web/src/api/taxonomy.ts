@@ -6,32 +6,32 @@ import type {
   TagSaveParams,
   TagVO,
 } from '@/types/taxonomy'
-import { request } from '@/utils/request'
+import { adminRequest } from '@/utils/request'
 
 export const getCategories = (status: CategoryStatus | '' = '') =>
-  request.get<CategoryVO[]>('/admin/categories', {
+  adminRequest.get<CategoryVO[]>('/admin/categories', {
     params: status ? { status } : {},
   })
 
 export const createCategory = (params: CategorySaveParams) =>
-  request.post<CreateTaxonomyResult>('/admin/categories', params)
+  adminRequest.post<CreateTaxonomyResult>('/admin/categories', params)
 
 export const updateCategory = (id: number, params: CategorySaveParams) =>
-  request.put<CategoryVO>(`/admin/categories/${id}`, params)
+  adminRequest.put<CategoryVO>(`/admin/categories/${id}`, params)
 
 export const deleteCategory = (id: number) =>
-  request.delete<void>(`/admin/categories/${id}`)
+  adminRequest.delete<void>(`/admin/categories/${id}`)
 
 export const getTags = (keyword = '') =>
-  request.get<TagVO[]>('/admin/tags', {
+  adminRequest.get<TagVO[]>('/admin/tags', {
     params: keyword ? { keyword } : {},
   })
 
 export const createTag = (params: TagSaveParams) =>
-  request.post<CreateTaxonomyResult>('/admin/tags', params)
+  adminRequest.post<CreateTaxonomyResult>('/admin/tags', params)
 
 export const updateTag = (id: number, params: TagSaveParams) =>
-  request.put<TagVO>(`/admin/tags/${id}`, params)
+  adminRequest.put<TagVO>(`/admin/tags/${id}`, params)
 
 export const deleteTag = (id: number) =>
-  request.delete<void>(`/admin/tags/${id}`)
+  adminRequest.delete<void>(`/admin/tags/${id}`)

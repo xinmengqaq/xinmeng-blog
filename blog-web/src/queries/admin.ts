@@ -9,7 +9,7 @@ import {
   validateAdminToken,
 } from '@/api/admin'
 import { removeAdminAvatar, uploadAdminAvatar } from '@/api/file'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type {
   AdminVO,
   ChangeAdminPasswordParams,
@@ -27,7 +27,7 @@ export const adminQueryKeys = {
 }
 
 export const useAdminProfileQuery = (options?: { enabled?: boolean }) => {
-  const setCurrentUser = useAuthStore((state) => state.setCurrentUser)
+  const setCurrentUser = useAdminAuthStore((state) => state.setCurrentUser)
 
   const query = useQuery({
     queryKey: adminQueryKeys.profile,
@@ -45,7 +45,7 @@ export const useAdminProfileQuery = (options?: { enabled?: boolean }) => {
 }
 
 export const useUpdateAdminProfileMutation = () => {
-  const setCurrentUser = useAuthStore((state) => state.setCurrentUser)
+  const setCurrentUser = useAdminAuthStore((state) => state.setCurrentUser)
 
   return useMutation<AdminVO, unknown, UpdateAdminProfileParams>({
     mutationFn: (params) => updateAdminProfile(params),
@@ -66,7 +66,7 @@ type SaveAdminProfileWithAvatarResult = {
 
 export const useSaveAdminProfileWithAvatarMutation = () => {
   const queryClient = useQueryClient()
-  const setCurrentUser = useAuthStore((state) => state.setCurrentUser)
+  const setCurrentUser = useAdminAuthStore((state) => state.setCurrentUser)
 
   return useMutation<
     SaveAdminProfileWithAvatarResult,
@@ -122,7 +122,7 @@ export const useSaveAdminProfileWithAvatarMutation = () => {
 }
 
 export const useChangeAdminPasswordMutation = () => {
-  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const clearAuth = useAdminAuthStore((state) => state.clearAuth)
 
   return useMutation<void, unknown, ChangeAdminPasswordParams>({
     mutationFn: (params) => changeAdminPassword(params),
@@ -136,7 +136,7 @@ export const useValidateAdminTokenMutation = () =>
   })
 
 export const useRefreshAdminTokenMutation = () => {
-  const setToken = useAuthStore((state) => state.setToken)
+  const setToken = useAdminAuthStore((state) => state.setToken)
 
   return useMutation<RefreshTokenResult, unknown, void>({
     mutationFn: () => refreshAdminToken(),

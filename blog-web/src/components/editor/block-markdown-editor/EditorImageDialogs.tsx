@@ -1,6 +1,6 @@
 import { ImageOff } from 'lucide-react'
 
-import { ImageCropDialog } from '@/components/admin/image-upload'
+import { ImageCropDialog } from '@/components/image-editor'
 import { Alert, Button, Modal } from '@/components/ui'
 
 import type { EditorImageUpload } from './hooks/useEditorImageUpload'

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { request } from '@/utils/request'
+import { adminRequest } from '@/utils/request'
 
 import {
   createCategory,
@@ -14,7 +14,7 @@ import {
 } from './taxonomy'
 
 vi.mock('@/utils/request', () => ({
-  request: {
+  adminRequest: {
     delete: vi.fn(),
     get: vi.fn(),
     post: vi.fn(),
@@ -30,7 +30,7 @@ describe('文章分类 API', () => {
     // When 前端请求文章分类列表
     getCategories('visible')
     // Then 请求只应包含后端支持的 status 参数
-    expect(request.get).toHaveBeenCalledWith('/admin/categories', {
+    expect(adminRequest.get).toHaveBeenCalledWith('/admin/categories', {
       params: { status: 'visible' },
     })
   })
@@ -46,7 +46,7 @@ describe('文章分类 API', () => {
     // When 前端提交新建分类请求
     createCategory(params)
     // Then 请求应包含后端支持的完整分类保存参数
-    expect(request.post).toHaveBeenCalledWith('/admin/categories', params)
+    expect(adminRequest.post).toHaveBeenCalledWith('/admin/categories', params)
   })
 
   it('修改分类时应向指定分类提交完整字段', () => {
@@ -60,7 +60,7 @@ describe('文章分类 API', () => {
     // When 前端提交分类修改请求
     updateCategory(8, params)
     // Then 请求应携带分类 ID 和完整分类保存参数
-    expect(request.put).toHaveBeenCalledWith('/admin/categories/8', params)
+    expect(adminRequest.put).toHaveBeenCalledWith('/admin/categories/8', params)
   })
 
   it('删除分类时应请求指定分类资源', () => {
@@ -68,7 +68,7 @@ describe('文章分类 API', () => {
     // When 前端提交分类删除请求
     deleteCategory(8)
     // Then 请求应删除指定分类 ID 对应的资源
-    expect(request.delete).toHaveBeenCalledWith('/admin/categories/8')
+    expect(adminRequest.delete).toHaveBeenCalledWith('/admin/categories/8')
   })
 })
 
@@ -80,7 +80,7 @@ describe('文章标签 API', () => {
     // When 前端请求文章标签列表
     getTags('React')
     // Then 请求应只传递后端支持的 keyword 参数
-    expect(request.get).toHaveBeenCalledWith('/admin/tags', {
+    expect(adminRequest.get).toHaveBeenCalledWith('/admin/tags', {
       params: { keyword: 'React' },
     })
   })
@@ -90,7 +90,7 @@ describe('文章标签 API', () => {
     // When 前端提交新建标签请求
     createTag({ name: 'TypeScript' })
     // Then 请求应包含后端支持的标签名称
-    expect(request.post).toHaveBeenCalledWith('/admin/tags', {
+    expect(adminRequest.post).toHaveBeenCalledWith('/admin/tags', {
       name: 'TypeScript',
     })
   })
@@ -100,7 +100,7 @@ describe('文章标签 API', () => {
     // When 前端提交标签修改请求
     updateTag(3, { name: 'MyBatis' })
     // Then 请求应携带标签 ID 和新的标签名称
-    expect(request.put).toHaveBeenCalledWith('/admin/tags/3', {
+    expect(adminRequest.put).toHaveBeenCalledWith('/admin/tags/3', {
       name: 'MyBatis',
     })
   })
@@ -110,6 +110,6 @@ describe('文章标签 API', () => {
     // When 前端提交标签删除请求
     deleteTag(3)
     // Then 请求应删除指定标签 ID 对应的资源
-    expect(request.delete).toHaveBeenCalledWith('/admin/tags/3')
+    expect(adminRequest.delete).toHaveBeenCalledWith('/admin/tags/3')
   })
 })

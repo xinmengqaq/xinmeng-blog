@@ -1,0 +1,234 @@
+.front-header__account-tools {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.front-header__account-tools .front-motion-toggle--desktop {
+  inset: auto;
+  position: static;
+}
+
+.front-account,
+.front-account-mobile {
+  font-family: var(--front-font-family);
+  position: relative;
+}
+
+.front-account-login,
+.front-account__trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+}
+
+.front-account-login svg {
+  height: 18px;
+  width: 18px;
+}
+
+.front-account__trigger {
+  max-width: min(320px, 32vw);
+}
+
+.front-account-avatar {
+  align-items: center;
+  background: rgb(255 250 252 / 92%);
+  border: 1px solid rgb(255 255 255 / 68%);
+  border-radius: 50%;
+  color: var(--front-pink);
+  display: inline-flex;
+  flex: 0 0 34px;
+  height: 34px;
+  justify-content: center;
+  overflow: hidden;
+  width: 34px;
+}
+
+.front-account-avatar img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.front-account-avatar svg {
+  height: 19px;
+  width: 19px;
+}
+
+.front-account__nickname {
+  box-sizing: border-box;
+  display: block;
+  line-height: 1.5;
+  max-width: 236px;
+  min-width: 0;
+  overflow: hidden;
+  padding-block: 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.front-account__trigger > svg {
+  flex: 0 0 16px;
+  height: 16px;
+  transition: transform 0.18s ease;
+  width: 16px;
+}
+
+.front-account__trigger > svg.is-open {
+  transform: rotate(180deg);
+}
+
+.front-account__menu {
+  background: rgb(255 249 252 / 98%);
+  border: 1px solid rgb(216 100 136 / 52%);
+  border-radius: 6px;
+  box-shadow: 0 14px 32px rgb(104 52 70 / 18%);
+  min-width: 192px;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  transform-origin: top right;
+  will-change: transform, opacity;
+}
+
+.front-account__menu a,
+.front-account__menu button,
+.front-account-mobile-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #5f5260;
+  cursor: pointer;
+  display: flex;
+  font: 500 14px/1.2 var(--front-font-family);
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.front-account__menu button {
+  border-top: 1px solid #f0dce3;
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+.front-account__menu svg,
+.front-account-mobile-link svg {
+  height: 18px;
+  width: 18px;
+}
+
+.front-account__menu .is-danger,
+.front-account-mobile-link.is-danger {
+  color: var(--front-account-danger, #b44764);
+}
+
+.front-nav__mobile-account {
+  display: none;
+}
+
+.front-account-mobile {
+  display: grid;
+  gap: 4px;
+}
+
+.front-account-mobile__identity {
+  align-items: center;
+  color: var(--front-ink);
+  display: flex;
+  gap: 10px;
+  min-height: 52px;
+  min-width: 0;
+  padding: 4px 10px 8px;
+}
+
+.front-account-mobile__identity strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .front-account-login:hover,
+  .front-account__trigger:hover {
+    background: rgb(255 255 255 / 16%);
+    border-radius: 6px;
+  }
+
+  .front-account__menu a:hover,
+  .front-account__menu button:hover,
+  .front-account-mobile-link:hover {
+    background: #fff0f5;
+  }
+}
+
+@media (max-width: 767px) {
+  .front-header__account-tools {
+    display: none;
+  }
+
+  .front-nav__mobile-account {
+    border-bottom: 1px solid var(--front-line);
+    border-top: 1px solid var(--front-line);
+    display: block;
+    padding: 8px 0;
+  }
+
+  .front-nav .front-motion-toggle--mobile {
+    border: 0;
+    border-radius: 4px;
+    box-shadow: none;
+    color: var(--front-ink);
+    gap: 9px;
+    height: 48px;
+    inset: auto;
+    justify-content: flex-start;
+    padding: 0 12px;
+    position: static;
+    width: 100%;
+  }
+
+  .front-nav .front-motion-toggle--mobile .front-motion-toggle__signal {
+    flex: 0 0 24px;
+    height: 24px;
+    width: 24px;
+  }
+
+  .front-nav .front-motion-toggle--mobile .front-motion-toggle__label {
+    clip-path: none;
+    height: auto;
+    overflow: visible;
+    position: static;
+    white-space: normal;
+    width: auto;
+  }
+
+  .front-account-mobile-link {
+    min-height: 48px;
+    padding-inline: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .front-account__trigger > svg,
+  .front-account__menu {
+    transition: none;
+    will-change: auto;
+  }
+}

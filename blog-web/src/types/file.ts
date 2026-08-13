@@ -10,6 +10,8 @@ export interface ImageDraft {
 export type AdminAvatarChange =
   { kind: 'upload'; draft: ImageDraft } | { kind: 'remove' }
 
+export type UserAvatarChange = AdminAvatarChange
+
 export type ArticleCoverChange =
   { kind: 'upload'; draft: ImageDraft } | { kind: 'remove' }
 

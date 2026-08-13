@@ -1,10 +1,10 @@
 import type { AdminCaptcha, AdminVO, LoginParams } from '@/types/auth'
-import { request } from '@/utils/request'
+import { adminRequest } from '@/utils/request'
 
 export const getAdminCaptcha = () =>
-  request.get<AdminCaptcha>('/admin/captcha')
+  adminRequest.get<AdminCaptcha>('/admin/captcha')
 
 export const login = (params: LoginParams) =>
-  request.post<AdminVO>('/admin/login', params)
+  adminRequest.post<AdminVO>('/admin/login', params)
 
-export const logout = () => request.post<void>('/admin/logout')
+export const logout = () => adminRequest.post<void>('/admin/logout')

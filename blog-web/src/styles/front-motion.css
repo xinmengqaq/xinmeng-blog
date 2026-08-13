@@ -217,9 +217,11 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  html.front-custom-cursor:not(.front-native-cursor),
-  html.front-custom-cursor:not(.front-native-cursor) body,
-  html.front-custom-cursor:not(.front-native-cursor) body * {
+  html.front-custom-cursor:not(.front-native-cursor):not(:has(.ui-modal)),
+  html.front-custom-cursor:not(.front-native-cursor):not(:has(.ui-modal)) body,
+  html.front-custom-cursor:not(.front-native-cursor):not(:has(.ui-modal))
+    body
+    * {
     cursor: none !important;
   }
 }

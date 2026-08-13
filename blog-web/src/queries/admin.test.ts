@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { updateAdminProfile } from '@/api/admin'
 import { removeAdminAvatar, uploadAdminAvatar } from '@/api/file'
-import { useAuthStore } from '@/store/auth'
+import { useAdminAuthStore } from '@/store/auth'
 import type { AdminVO } from '@/types/auth'
 import type { ImageDraft } from '@/types/file'
 
@@ -65,7 +65,7 @@ describe('管理员头像保存 Query', () => {
   afterEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    useAuthStore.getState().clearAuth()
+    useAdminAuthStore.getState().clearAuth()
   })
 
   it('资料保存失败时不调用头像文件接口', async () => {
@@ -109,7 +109,7 @@ describe('管理员头像保存 Query', () => {
       calls.push('avatar-uploaded')
       return { file_url: confirmedProfile.avatar! }
     })
-    useAuthStore.getState().setAuth('token-1', adminVO())
+    useAdminAuthStore.getState().setAuth('token-1', adminVO())
     const { queryClient, Wrapper } = createWrapper()
     const { result } = renderHook(
       () => useSaveAdminProfileWithAvatarMutation(),
@@ -134,7 +134,7 @@ describe('管理员头像保存 Query', () => {
     expect(queryClient.getQueryData(adminQueryKeys.profile)).toEqual(
       confirmedProfile,
     )
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       avatar: '/files/confirmed-avatar.webp',
       name: '新梦梦',
     })
@@ -154,7 +154,7 @@ describe('管理员头像保存 Query', () => {
     vi.mocked(removeAdminAvatar).mockImplementation(async () => {
       calls.push('avatar-removed')
     })
-    useAuthStore.getState().setAuth('token-1', adminVO())
+    useAdminAuthStore.getState().setAuth('token-1', adminVO())
     const { queryClient, Wrapper } = createWrapper()
     const { result } = renderHook(
       () => useSaveAdminProfileWithAvatarMutation(),
@@ -175,7 +175,7 @@ describe('管理员头像保存 Query', () => {
     expect(queryClient.getQueryData(adminQueryKeys.profile)).toEqual(
       confirmedProfile,
     )
-    expect(useAuthStore.getState().currentUser?.avatar).toBeNull()
+    expect(useAdminAuthStore.getState().currentUser?.avatar).toBeNull()
   })
 
   it('无头像变更时只保存资料', async () => {
@@ -212,7 +212,7 @@ describe('管理员头像保存 Query', () => {
     const error = { code: 'UPLOAD_FAILED', message: '头像上传失败' }
     vi.mocked(updateAdminProfile).mockResolvedValue(savedProfile)
     vi.mocked(uploadAdminAvatar).mockRejectedValue(error)
-    useAuthStore.getState().setAuth('token-1', adminVO())
+    useAdminAuthStore.getState().setAuth('token-1', adminVO())
     const { queryClient, Wrapper } = createWrapper()
     const { result } = renderHook(
       () => useSaveAdminProfileWithAvatarMutation(),
@@ -233,7 +233,7 @@ describe('管理员头像保存 Query', () => {
     expect(queryClient.getQueryData(adminQueryKeys.profile)).toEqual(
       savedProfile,
     )
-    expect(useAuthStore.getState().currentUser).toMatchObject({
+    expect(useAdminAuthStore.getState().currentUser).toMatchObject({
       avatar: '/files/original-avatar.jpg',
       name: '新梦梦',
     })
@@ -247,10 +247,10 @@ describe('管理员头像保存 Query', () => {
     const error = { code: '401', message: '登录已失效', status: 200 }
     vi.mocked(updateAdminProfile).mockResolvedValue(savedProfile)
     vi.mocked(uploadAdminAvatar).mockImplementation(async () => {
-      useAuthStore.getState().clearAuth()
+      useAdminAuthStore.getState().clearAuth()
       throw error
     })
-    useAuthStore.getState().setAuth('token-1', adminVO())
+    useAdminAuthStore.getState().setAuth('token-1', adminVO())
     const { queryClient, Wrapper } = createWrapper()
     const { result } = renderHook(
       () => useSaveAdminProfileWithAvatarMutation(),
@@ -265,7 +265,7 @@ describe('管理员头像保存 Query', () => {
     ).rejects.toEqual(error)
 
     expect(queryClient.getQueryData(adminQueryKeys.profile)).toBeUndefined()
-    expect(useAuthStore.getState()).toMatchObject({
+    expect(useAdminAuthStore.getState()).toMatchObject({
       currentUser: null,
       isAuthenticated: false,
       token: null,

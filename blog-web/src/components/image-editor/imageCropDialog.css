@@ -27,6 +27,10 @@
   color: var(--color-text);
 }
 
+.image-crop-dialog__close-copy {
+  margin: 0;
+}
+
 .image-crop-dialog__workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 276px;
@@ -230,5 +234,72 @@
 @media (prefers-reduced-motion: reduce) {
   .image-crop-dialog__control input {
     scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .ui-modal__panel.image-crop-modal {
+    align-self: end;
+    border-radius: 8px 8px 0 0;
+    max-height: 100dvh;
+    max-width: none;
+    top: auto;
+    transform: none;
+    width: 100%;
+  }
+
+  .ui-modal:has(.image-crop-modal) {
+    padding: 0;
+  }
+
+  .image-crop-modal .ui-modal__header {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .image-crop-modal .ui-modal__footer {
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .image-crop-dialog__workspace,
+  .image-crop-dialog--gif {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .image-crop-dialog__canvas {
+    height: min(54dvh, 460px);
+  }
+
+  .image-crop-dialog__sidebar,
+  .image-crop-dialog__file-info {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .image-crop-dialog__sidebar {
+    gap: 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(132px, 0.58fr);
+    grid-template-rows: auto;
+    max-height: 34dvh;
+    padding: 18px;
+  }
+
+  .image-crop-dialog__gif-preview {
+    min-height: min(52dvh, 420px);
+  }
+}
+
+@media (max-width: 479px) {
+  .image-crop-dialog__sidebar {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 40dvh;
+  }
+
+  .image-crop-modal .ui-modal__footer {
+    flex-wrap: wrap-reverse;
+  }
+
+  .image-crop-modal .ui-modal__footer .ui-button {
+    flex: 1 1 132px;
+    min-height: 44px;
   }
 }
