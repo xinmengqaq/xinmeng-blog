@@ -22,6 +22,10 @@
 **/*.md
 !/README.md
 
+# 本地 Docker 发布规范与服务器部署教程，包含私有部署约定，禁止提交
+/docs/deployment/docker-image-release-ai-spec.md
+/docs/deployment/server-docker-deployment-tutorial.md
+
 # 本地环境变量与私密配置；示例配置允许提交
 **/.env
 **/.env.*
