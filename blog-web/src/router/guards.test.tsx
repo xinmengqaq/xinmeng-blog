@@ -79,7 +79,7 @@ describe('用户路由守卫', () => {
       error: null,
       isError: false,
       isPending: false,
-    } as ReturnType<typeof useUserProfileQuery>)
+    } as unknown as ReturnType<typeof useUserProfileQuery>)
     renderUserRoute()
     expect(screen.getByText('用户登录页')).toBeInTheDocument()
 
@@ -94,7 +94,7 @@ describe('用户路由守卫', () => {
       error: { code: '401', message: '登录已失效', status: 401 },
       isError: true,
       isPending: false,
-    } as ReturnType<typeof useUserProfileQuery>)
+    } as unknown as ReturnType<typeof useUserProfileQuery>)
     renderUserRoute()
     expect(screen.getAllByText('用户登录页')).toHaveLength(2)
   })
