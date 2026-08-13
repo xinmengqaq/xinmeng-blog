@@ -71,7 +71,11 @@ class BlogUserAccountConcurrencyIntegrationTest {
                             version INTEGER NOT NULL DEFAULT 1,
                             delete_at TIMESTAMPTZ,
                             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            CONSTRAINT ck_blog_user_delete_at CHECK (
+                                (status = 'pending_deletion' AND delete_at IS NOT NULL)
+                                OR (status IN ('enabled', 'disabled') AND delete_at IS NULL)
+                            )
                         )
                         """);
             }
@@ -108,6 +112,21 @@ class BlogUserAccountConcurrencyIntegrationTest {
         assertThat(results).containsExactlyInAnyOrder(true, false);
         assertThat(readInt("password_version")).isEqualTo(4);
         assertThat(passwordEncoder.matches("NewPassword456!", readString("password"))).isTrue();
+    }
+
+    @Test
+    @DisplayName("恢复账号会在同一次更新中恢复启用并清空删除时间")
+    void restoreAccountAtomicallyClearsDeletionSchedule() throws Exception {
+        insertUser("pending_deletion", OffsetDateTime.now().plusDays(1));
+        BlogUserRestoreDTO dto = new BlogUserRestoreDTO();
+        dto.setEmail("reader@example.com");
+        dto.setPassword("OldPassword123!");
+
+        authService.restoreAccount(dto);
+
+        assertThat(readString("status")).isEqualTo("enabled");
+        assertThat(readInt("password_version")).isEqualTo(4);
+        assertThat(readValue("delete_at")).isNull();
     }
 
     @Test

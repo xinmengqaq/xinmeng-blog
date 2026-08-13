@@ -24,6 +24,13 @@ public interface BlogUserMapper extends BaseMapper<BlogUser> {
     BlogUser selectByEmailForUpdate(@Param("email") String email);
 
     /**
+     * 原子恢复待删除账号，避免启用状态与删除时间产生非法中间状态。
+     */
+    int restoreAccount(@Param("id") Long id,
+                       @Param("version") Integer version,
+                       @Param("passwordVersion") Integer passwordVersion);
+
+    /**
      * 删除过期的待删除用户
      * @param now 当前时间
      * @param limit 删除数量限制

@@ -2,7 +2,6 @@ package com.xinmengqaq.springboot.user.service.impl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
 import com.xinmengqaq.springboot.config.JwtProperties;
@@ -41,6 +40,8 @@ import java.time.OffsetDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
@@ -370,8 +371,7 @@ class BlogUserAuthServiceImplTest {
         user.setDeleteAt(OffsetDateTime.now().plusDays(1));
         when(blogUserMapper.selectByEmailForUpdate("reader@example.com")).thenReturn(user);
         when(passwordEncoder.matches("StrongPassword123!", user.getPassword())).thenReturn(true);
-        when(blogUserMapper.updateById(user)).thenReturn(1);
-        when(blogUserMapper.update(isNull(), any(UpdateWrapper.class))).thenReturn(1);
+        when(blogUserMapper.restoreAccount(12L, 7, 4)).thenReturn(1);
 
         authService.restoreAccount(restoreDTO());
 
@@ -379,6 +379,7 @@ class BlogUserAuthServiceImplTest {
         assertThat(user.getDeleteAt()).isNull();
         assertThat(user.getPasswordVersion()).isEqualTo(4);
         verify(blogUserMapper).selectByEmailForUpdate("reader@example.com");
+        verify(blogUserMapper).restoreAccount(12L, 7, 4);
     }
 
     @Test
@@ -392,7 +393,7 @@ class BlogUserAuthServiceImplTest {
                 .isInstanceOfSatisfying(BusinessException.class, exception ->
                         assertThat(exception.getCode()).isEqualTo(ErrorCode.NOT_FOUND.getCode()));
 
-        verify(blogUserMapper, never()).updateById(any(BlogUser.class));
+        verify(blogUserMapper, never()).restoreAccount(anyLong(), anyInt(), anyInt());
     }
 
     private EmailCodeSendDTO emailCodeSendDTO(String email) {

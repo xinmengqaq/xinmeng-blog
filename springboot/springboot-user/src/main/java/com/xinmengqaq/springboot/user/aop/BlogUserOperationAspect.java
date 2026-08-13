@@ -48,7 +48,7 @@ public class BlogUserOperationAspect {
     }
 
     /**
-     * 按固定字段输出一条不含敏感参数的用户操作日志。
+     * 按中文可读格式输出一条不含敏感参数的用户操作日志。
      *
      * @param action 已解析的操作动作
      * @param args 目标方法实参，仅用于提取安全的 ID
@@ -61,11 +61,23 @@ public class BlogUserOperationAspect {
                        Throwable throwable, long start) {
         Long targetUserId = isAdminAction(action) ? firstLong(args) : null;
         Long userId = isAdminAction(action) ? null : currentUserId(args, result);
-        USER_OPERATION.info(
-                "action={}, userId={}, adminId={}, targetUserId={}, success={}, durationMs={}, errorType={}",
-                action, userId, currentAdminId(), targetUserId, success,
-                (System.nanoTime() - start) / 1_000_000L,
-                throwable == null ? null : throwable.getClass().getSimpleName());
+        StringBuilder message = new StringBuilder("用户操作：")
+                .append(action.getDescription());
+        appendId(message, "用户ID", userId);
+        appendId(message, "管理员ID", currentAdminId());
+        appendId(message, "目标用户ID", targetUserId);
+        message.append("，结果=").append(success ? "成功" : "失败")
+                .append("，耗时=").append((System.nanoTime() - start) / 1_000_000L).append("ms");
+        if (throwable != null) {
+            message.append("，异常=").append(throwable.getClass().getSimpleName());
+        }
+        USER_OPERATION.info(message.toString());
+    }
+
+    private void appendId(StringBuilder message, String label, Long id) {
+        if (id != null) {
+            message.append("，").append(label).append("=").append(id);
+        }
     }
 
     /**

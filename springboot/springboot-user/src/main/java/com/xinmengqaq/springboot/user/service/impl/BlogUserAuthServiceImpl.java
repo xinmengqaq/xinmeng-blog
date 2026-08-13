@@ -1,7 +1,6 @@
 package com.xinmengqaq.springboot.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.xinmengqaq.springboot.common.enums.ErrorCode;
 import com.xinmengqaq.springboot.common.exception.BusinessException;
@@ -252,10 +251,7 @@ public class BlogUserAuthServiceImpl implements BlogUserAuthService {
         user.setStatus(BlogUserStatus.ENABLED.getValue());
         user.setDeleteAt(null);
         user.setPasswordVersion(user.getPasswordVersion() + 1);
-        updateLockedUser(user);
-        if (blogUserMapper.update(null, new UpdateWrapper<BlogUser>()
-                .eq("id", user.getId())
-                .set("delete_at", null)) != 1) {
+        if (blogUserMapper.restoreAccount(user.getId(), user.getVersion(), user.getPasswordVersion()) != 1) {
             throw new BusinessException(ErrorCode.CONFLICT, "用户数据已发生变化，请重试");
         }
     }
