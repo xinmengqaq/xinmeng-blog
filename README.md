@@ -222,22 +222,13 @@ OPENAI_API_KEY=
 
 Spring Boot 与 FastAPI 必须使用同一份 `JWT_SECRET`。
 
-### 3. 准备 TLS 证书
-
-Nginx 容器以只读方式挂载两份证书，启动前放到 `blog-web/nginx/conf/` 下：
-
-- `fullchain.pem`
-- `privkey.pem`
-
-证书文件不会被提交到仓库。Nginx 配置中的 `server_name` 固定为 `www.xinmengqaq.top`，使用其他域名时需修改 `blog-web/nginx/conf/nginx.conf` 后重新构建。
-
-### 4. 构建并启动
+### 3. 构建并启动
 
 ```powershell
 docker compose up -d --build
 ```
 
-启动后通过 `https://<你的域名>` 访问公开站点和管理后台。生产环境建议将数据库端口绑定到 `127.0.0.1`，只保留 Nginx 的 `80`/`443` 对外。
+启动后通过 `https://<你的域名>` 访问公开站点和管理后台。
 
 ## 访问地址
 
