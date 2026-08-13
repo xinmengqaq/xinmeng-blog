@@ -181,6 +181,64 @@ npm ci
 npm run dev
 ```
 
+## Docker 部署
+
+使用根目录的 `docker-compose.yml` 一键编排四个服务：PostgreSQL、Spring Boot、FastAPI 和 Nginx。
+
+### 1. 构建产物
+
+`springboot` 和 `blog-web` 的镜像直接复用本地构建产物，先完成打包：
+
+```powershell
+cd springboot
+mvn -pl springboot-web -am package -DskipTests
+```
+
+```powershell
+cd blog-web
+npm ci
+npm run build
+```
+
+### 2. 准备环境变量
+
+在仓库根目录创建 `.env`，`docker-compose.yml` 会按名字引用：
+
+```text
+DB_USER=<数据库用户>
+DB_PASSWORD=<数据库密码>
+DB_APP_USER=<应用数据库用户>
+DB_APP_PASSWORD=<应用数据库密码>
+PGDATA_HOST=<宿主机 PostgreSQL 数据目录，例如 C:/docker/blog_pgdata>
+JWT_SECRET=<与两个后端共用的 JWT 密钥>
+MAIL_HOST=<SMTP 服务器>
+MAIL_USERNAME=<发件邮箱>
+MAIL_PASSWORD=<邮箱授权码>
+MAIL_PORT=465
+# 可选：FastAPI 的 AI 能力
+OPENAI_BASE_URL=
+OPENAI_API_KEY=
+```
+
+Spring Boot 与 FastAPI 必须使用同一份 `JWT_SECRET`。
+
+### 3. 准备 TLS 证书
+
+Nginx 容器以只读方式挂载两份证书，启动前放到 `blog-web/nginx/conf/` 下：
+
+- `fullchain.pem`
+- `privkey.pem`
+
+证书文件不会被提交到仓库。Nginx 配置中的 `server_name` 固定为 `www.xinmengqaq.top`，使用其他域名时需修改 `blog-web/nginx/conf/nginx.conf` 后重新构建。
+
+### 4. 构建并启动
+
+```powershell
+docker compose up -d --build
+```
+
+启动后通过 `https://<你的域名>` 访问公开站点和管理后台。生产环境建议将数据库端口绑定到 `127.0.0.1`，只保留 Nginx 的 `80`/`443` 对外。
+
 ## 访问地址
 
 - 公开站点：`http://localhost:5173/`
