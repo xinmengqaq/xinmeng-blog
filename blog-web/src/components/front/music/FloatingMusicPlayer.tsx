@@ -15,7 +15,7 @@ import {
 import { useRef, useState, type CSSProperties } from 'react'
 
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
-import { useFrontMusicPlayer } from '@/hooks/front/musicPlayerContext'
+import { useFrontMusicPlayer } from '@/hooks/front/useFrontMusicPlayer'
 
 import './floatingMusicPlayer.css'
 

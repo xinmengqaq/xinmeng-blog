@@ -4,7 +4,7 @@ import { Pause, Play, SkipBack, SkipForward, Volume2 } from 'lucide-react'
 import { useRef, type CSSProperties } from 'react'
 
 import { useFrontMotionPreference } from '@/hooks/front/motionPreference'
-import { useFrontMusicPlayer } from '@/hooks/front/musicPlayerContext'
+import { useFrontMusicPlayer } from '@/hooks/front/useFrontMusicPlayer'
 import { useFrontPageTransitionActive } from '@/hooks/front/pageTransitionContext'
 
 import './heroMusicPlayer.css'

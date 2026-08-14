@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -11,27 +9,10 @@ import {
 
 import { useAudioPreview } from '@/hooks/useAudioPreview'
 import { usePublicMusicQuery } from '@/queries/music'
-import type { PublicMusic } from '@/types/music'
-
-type FrontMusicPlayerValue = {
-  current: PublicMusic | undefined
-  currentIndex: number
-  currentTime: number
-  duration: number
-  isPlaying: boolean
-  next: () => void
-  previous: () => void
-  seek: (seconds: number) => void
-  selectTrack: (index: number) => void
-  setVolume: (volume: number) => void
-  togglePlayback: () => void
-  tracks: PublicMusic[]
-  volume: number
-}
-
-const FrontMusicPlayerContext = createContext<FrontMusicPlayerValue | null>(
-  null,
-)
+import {
+  FrontMusicPlayerContext,
+  type FrontMusicPlayerValue,
+} from './frontMusicPlayerContext'
 
 export const FrontMusicPlayerProvider = ({
   children,
@@ -39,7 +20,7 @@ export const FrontMusicPlayerProvider = ({
   children: ReactNode
 }) => {
   const query = usePublicMusicQuery()
-  const tracks = query.data?.items ?? []
+  const tracks = useMemo(() => query.data?.items ?? [], [query.data?.items])
   const [currentIndex, setCurrentIndex] = useState(0)
   const initializedRef = useRef(false)
   const {
@@ -123,10 +104,4 @@ export const FrontMusicPlayerProvider = ({
       {children}
     </FrontMusicPlayerContext.Provider>
   )
-}
-
-export const useFrontMusicPlayer = () => {
-  const value = useContext(FrontMusicPlayerContext)
-  if (!value) throw new Error('前台音乐播放器必须在 Provider 内使用')
-  return value
 }
