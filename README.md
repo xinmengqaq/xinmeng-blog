@@ -1,8 +1,8 @@
 # 薪梦集
 
-薪梦集是一套前后端分离的个人博客系统，包含公开阅读站点、内容管理后台、普通用户账号、图片与音乐文件服务和 PostgreSQL 关系型数据库。
+个人博客系统，前后端分离。有公开阅读站、内容管理后台、普通用户账号，以及图片 / 音乐文件服务，数据库用 PostgreSQL。
 
-项目由 React、Spring Boot 和 FastAPI 组成：Spring Boot 负责博客核心业务、管理员和普通用户账号，FastAPI 负责图片、文件和音乐资源。
+前端是 React，业务后端是 Spring Boot（文章、账号、管理员这些），文件和音乐走 FastAPI。
 
 ## 预览
 
@@ -12,29 +12,29 @@
 
 ### 公开站点
 
-- 首页文章展示和音乐播放器
-- 文章列表、关键词搜索、分类和标签筛选
-- 文章详情、正文目录、阅读设置和点赞
-- 站点背景配置和页面动效
+- 首页文章和音乐播放器
+- 文章列表，支持关键词搜索、分类和标签筛选
+- 文章详情：正文目录、阅读设置、点赞
+- 站点背景和页面动效
 
 ### 普通用户
 
-- 邮箱注册、图片验证码和邮件验证码
-- 登录、记住登录状态和退出登录
-- 昵称和头像管理
-- 修改邮箱、修改密码和忘记密码重置
-- 注销账号和恢复待删除账号
+- 邮箱注册（图片验证码 + 邮件验证码）
+- 登录 / 记住登录 / 退出
+- 改昵称、换头像
+- 改邮箱、改密码、忘记密码重置
+- 注销账号，以及恢复还在冷静期的账号
 
 ### 管理后台
 
-- 管理员登录、图片验证码和 JWT 鉴权
-- 管理员资料、头像和密码管理
-- 文章新建、编辑、Markdown 导入、删除和批量删除
-- 文章封面和正文图片管理
-- 文章发布状态、置顶和推荐管理
-- 分类与标签管理
-- 音乐上传、列表、试听、信息编辑、启停和删除
-- 站点背景上传、更换和移除
+- 管理员登录（图片验证码 + JWT）
+- 管理员资料、头像、密码
+- 文章：新建、编辑、Markdown 导入、删除、批量删除
+- 封面图和正文图片管理
+- 发布状态、置顶、推荐
+- 分类和标签
+- 音乐：上传、列表、试听、改信息、启停、删除
+- 站点背景：上传、更换、移除
 
 ## 技术栈
 
@@ -50,33 +50,33 @@
 - 字体：[Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)、[寒蝉圆黑体（Chill Round Gothic）](https://github.com/Warren2060/ChillRoundGothic)
 - 图标：[Lucide Icons](https://lucide.dev/)
 
-字体遵循 SIL Open Font License 1.1。
+字体许可是 SIL Open Font License 1.1。
 
 ## 项目结构
 
 ```text
 项目学习/
-├─ blog-web/       前台站点与管理后台
-├─ springboot/     业务接口与数据访问
-├─ blog-fastapi/   图片与音乐文件管理
-└─ pgsql/          PostgreSQL 表结构与初始化账号
+├─ blog-web/       前台 + 管理后台
+├─ springboot/     业务接口和数据访问
+├─ blog-fastapi/   图片、音乐文件
+└─ pgsql/          表结构和初始化账号
 ```
 
-Spring Boot 模块：
+Spring Boot 里按模块拆的：
 
 ```text
 springboot/
-├─ springboot-web/       应用入口
-├─ springboot-common/    公共响应、异常处理与 JWT
-├─ springboot-admin/     管理员与登录认证
-├─ springboot-article/   文章、分类与标签
-├─ springboot-user/      普通用户账号与安全
+├─ springboot-web/       入口
+├─ springboot-common/    统一响应、异常、JWT
+├─ springboot-admin/     管理员登录
+├─ springboot-article/   文章、分类、标签
+├─ springboot-user/      普通用户
 └─ springboot-site/      站点配置
 ```
 
 ## 请求分发
 
-Nginx 将文件和音乐模块转发到 FastAPI `8000`，其余业务接口转发到 Spring Boot `9090`：
+Nginx 把文件和音乐相关请求转到 FastAPI（8000），其它业务接口走 Spring Boot（9090）：
 
 ```nginx
 location ^~ /api/admin/files/ {
@@ -107,9 +107,9 @@ location ^~ /api/ {
 }
 ```
 
-Spring Boot 与 FastAPI 使用同一个 PostgreSQL 数据库和同一份 JWT 密钥。
+两边连的是同一个 PostgreSQL，JWT 密钥也要一致。
 
-PostgreSQL 保存管理员、普通用户、文章、分类、标签、点赞、音乐、站点配置和文件地址等业务数据。图片、音乐等文件保存在 FastAPI 管理的文件目录中，数据库只记录访问地址。
+库里存管理员、用户、文章、分类、标签、点赞、音乐、站点配置，以及文件访问地址。图片和音乐本体在 FastAPI 管的目录里，数据库只记路径。
 
 ## 环境要求
 
@@ -122,7 +122,7 @@ PostgreSQL 保存管理员、普通用户、文章、分类、标签、点赞、
 
 ### Spring Boot
 
-在 `springboot/springboot-web/src/main/resources/application-local.yml` 中直接配置本地值，或设置同名环境变量：
+本地可以直接改 `springboot/springboot-web/src/main/resources/application-local.yml`，也可以用同名环境变量：
 
 ```text
 DB_URL=jdbc:postgresql://localhost:5433/spring_blog?currentSchema=public&sslmode=disable
@@ -134,7 +134,7 @@ DOCS_ENABLED=true
 
 ### FastAPI
 
-直接在 `blog-fastapi/` 根目录创建或编辑 `.env`。字段与 `app/core/config.py` 一一对应：
+在 `blog-fastapi/` 下建或改 `.env`，字段和 `app/core/config.py` 对得上就行：
 
 ```text
 APP_ENV=development
@@ -149,21 +149,25 @@ JWT_CLOCK_SKEW_SECONDS=120
 
 ### 前端
 
-直接在 `blog-web/` 根目录创建或编辑 `.env`：
+在 `blog-web/` 下建或改 `.env`：
 
 ```text
 VITE_API_BASE=/api
 ```
 
-前端未设置 `VITE_API_BASE` 时同样默认使用 `/api`。`.env.example` 中其余图像工具字段目前没有被前端运行时代码读取。
+不设的话默认也是 `/api`。`.env.example` 里还有些图像工具相关字段，前端运行时目前没用到。
 
-两个后端必须连接同一个数据库，并使用同一份 `JWT_SECRET`。不要提交真实账号、密码或密钥。
+两个后端必须连同一库、同一份 `JWT_SECRET`。真实账号密码和密钥别提交进仓库。
 
 ### PostgreSQL
 
-Docker 部署不需要在 pgAdmin 中手工建表，也不再使用旧的 `pgsql/schema.sql`。数据库结构由 Flyway 的 `V1` 基线统一创建和更新。
+手动部署时不用旧的 `pgsql/schema.sql`，直接执行新的 `pgsql/migrations/V1__current_schema_baseline.sql` 建表和写入默认管理员，例如：
 
-默认管理员账号和密码均为 `admin`，首次登录后应立即修改密码。
+```powershell
+psql -h localhost -p 5433 -U blog_remote -d spring_blog -f pgsql/migrations/V1__current_schema_baseline.sql
+```
+
+默认管理员账号密码都是 `admin`，第一次登录后请马上改掉。
 
 ## 启动
 
@@ -186,11 +190,16 @@ npm run dev
 
 ## Docker 部署
 
-项目使用 Docker Compose 编排 PostgreSQL、Spring Boot、FastAPI 和 Nginx。首次部署和后续更新都由 Docker 完成，不需要在宿主机安装 Java、Python、Node.js、PostgreSQL 或手工执行数据库脚本。
+用 Docker Compose 拉起 PostgreSQL、Spring Boot、FastAPI 和 Nginx。首次部署和以后更新都走 Docker 就行，宿主机不用单独装 Java / Python / Node / PostgreSQL，也不用手跑建库脚本。
 
 ### 首次部署
 
-首次部署有两种方式：方式一克隆项目源码后由 Docker 构建，方式二只下载公开部署文件并直接拉取 Docker Hub 镜像。两种方式使用同一套 PostgreSQL、Flyway 和数据库初始化规则。
+两条路：
+
+1. 克隆源码，让 Docker 本地构建
+2. 只下载公开部署文件，直接拉 Docker Hub 镜像
+
+两边用的 PostgreSQL、Flyway 和初始化规则是同一套。
 
 #### 方式一：克隆项目部署
 
@@ -201,7 +210,7 @@ cd xinmeng-blog
 
 #### 1. 准备环境变量
 
-参考根目录 `.env.example` 准备 `.env`，开源版设置：
+照着根目录 `.env.example` 写一份 `.env`。开源版至少要有：
 
 ```text
 DEPLOY_MODE=opensource
@@ -220,9 +229,9 @@ MAIL_PORT=465
 
 ```
 
-`DB_PASSWORD` 和 `JWT_SECRET` 应使用无法猜测的随机值。Spring Boot 与 FastAPI 使用同一个数据库账号，并且必须使用同一份 `JWT_SECRET`。
+`DB_PASSWORD` 和 `JWT_SECRET` 请用难猜的随机值。Spring Boot 和 FastAPI 共用同一个数据库账号，JWT 密钥也必须相同。
 
-默认管理员账号和密码均为 `admin`，由 `V1` 在空库首次建表时写入，数据库保存的是 BCrypt 哈希而不是明文。首次登录后应立即修改密码。
+默认管理员还是 `admin` / `admin`，空库第一次跑 `V1` 时写入，库里存的是 BCrypt 哈希。登录后尽快改密码。
 
 #### 2. 一键启动
 
@@ -230,13 +239,13 @@ MAIL_PORT=465
 docker compose --env-file .env up -d --build --wait
 ```
 
-Docker 会自动构建项目镜像、启动数据库，再由官方 Flyway 镜像执行 `V1` 数据库基线，成功后才启动两个后端和 Nginx。`V1` 只写入默认管理员，不会插入演示文章、分类、标签、音乐或普通用户数据。
+会自动构建镜像、起数据库，再用官方 Flyway 镜像跑 `V1` 基线；成功之后才拉起两个后端和 Nginx。`V1` 只写默认管理员，不会塞演示文章、分类、标签、音乐或普通用户。
 
-开源部署还会在同一个 PostgreSQL 容器中创建 `springboot_vue_test` 测试库。业务库和测试库互相独立，不会增加第二个数据库容器。
+开源部署还会在同一个 PostgreSQL 容器里建一个 `springboot_vue_test` 测试库，和业务库分开，不会多起一个数据库容器。
 
 #### 方式二：直接拉取公开镜像
 
-这种方式不会下载三个后端和前端项目源，只下载 Docker Compose 部署文件、环境变量示例和数据库迁移文件：
+不拉三个工程源码，只拿 Compose、环境变量示例和迁移文件：
 
 ```powershell
 New-Item -ItemType Directory -Force xinmeng-blog-deploy | Out-Null
@@ -251,60 +260,66 @@ Invoke-WebRequest "$base/pgsql/migrations/V1__current_schema_baseline.sql" -OutF
 Copy-Item .env.example .env
 ```
 
-编辑 `.env` 后，直接拉取并启动公开镜像：
+改好 `.env` 之后拉镜像并启动：
 
 ```powershell
 docker compose --env-file .env pull
 docker compose --env-file .env up -d --wait
 ```
 
-公开镜像标签为：`xinmengqwq/xinmeng-blog:springboot`、`xinmengqwq/xinmeng-blog:fastapi`、`xinmengqwq/xinmeng-blog:web`。公开部署使用通用 HTTP 配置，不包含个人域名和证书；需要 HTTPS 时，应在外部反向代理中配置自己的域名和证书。
+公开镜像标签：
+
+- `xinmengqwq/xinmeng-blog:springboot`
+- `xinmengqwq/xinmeng-blog:fastapi`
+- `xinmengqwq/xinmeng-blog:web`
+
+公开部署是通用 HTTP 配置，没有个人域名和证书。要 HTTPS 的话，在外面的反向代理上自己配。
 
 #### 登录后台
 
-部署完成后访问：
+起来之后：
 
 - 公开站点：`http://localhost/`
 - 管理后台：`http://localhost/admin/login`
 
-使用默认账号密码 `admin/admin` 登录，首次登录后应立即修改密码。
+默认 `admin` / `admin`，进门先改密码。
 
 ### 更新已有部署
 
-保留首次部署时使用的 `.env` 和 PostgreSQL 数据目录，然后拉取新版本：
+保留当初的 `.env` 和 PostgreSQL 数据目录，然后：
 
 ```powershell
 git pull
 docker compose --env-file .env up -d --build --wait
 ```
 
-更新时 Docker 会重新构建发生变化的应用镜像，并只执行尚未执行的数据库增量更新。已有管理员、用户、文章、分类、标签、音乐、站点配置和上传文件不会被重新初始化或覆盖。
+有改动的应用镜像会重建，数据库只跑还没执行过的增量迁移。已有管理员、用户、文章、分类、标签、音乐、站点配置和上传文件都不会被覆盖。
 
-如果数据库更新失败，新版本后端不会启动。排查并修复错误后，可以使用同一个命令重新执行。
+如果迁移失败，新版本后端不会起来。修好后再跑同一条命令即可。
 
-不要执行 `docker compose down -v`，也不要删除 `PGDATA_HOST` 指向的目录；这两种操作会删除持久化数据库数据。只停止服务时使用：
+别用 `docker compose down -v`，也别删 `PGDATA_HOST` 指向的目录——那会把持久化数据一起清掉。只想停服务的话：
 
 ```powershell
 docker compose --env-file .env stop
 ```
 
-再次启动仍使用同一个一键部署命令。
+再启动还是用上面的一键部署命令。
 
 ### 服务器版本
 
-服务器同样使用根目录 `.env`，其中设置：
+服务器也用根目录 `.env`，把模式改成：
 
 ```text
 DEPLOY_MODE=server
 ```
 
-启动或更新命令：
+启动 / 更新：
 
 ```powershell
 docker compose --env-file .env up -d --build --wait
 ```
 
-服务器版本不会创建 `springboot_vue_test`。已有非空数据库第一次接入 Flyway 时登记为 `V1`，不会重新执行 `V1` 的建表和默认管理员数据；以后只执行新增的 `V2`、`V3` 等迁移。
+服务器版不会建 `springboot_vue_test`。已有非空库第一次接 Flyway 时只登记为 `V1`，不会重跑建表和默认管理员；之后只跑新增的 `V2`、`V3` 等。
 
 ## 访问地址
 
