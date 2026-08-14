@@ -117,7 +117,7 @@ describe('FrontLive2DWidget', () => {
       supportsTextureSwitch: false,
     }
     mocks.config.model = model
-    mocks.mount.mockResolvedValue(cleanup)
+    mocks.mount.mockResolvedValue({ cleanup })
 
     const view = renderWidget()
 
@@ -143,7 +143,7 @@ describe('FrontLive2DWidget', () => {
       supportsTextureSwitch: false,
     }
     mocks.config.model = model
-    mocks.mount.mockResolvedValue(cleanup)
+    mocks.mount.mockResolvedValue({ cleanup })
     const setBannerBottom = appendBanner(window.innerHeight)
 
     const view = renderWidget()
@@ -157,6 +157,7 @@ describe('FrontLive2DWidget', () => {
     await waitFor(() => expect(mocks.mount).toHaveBeenCalledOnce())
 
     fireEvent.scroll(window)
+    await new Promise((resolve) => window.setTimeout(resolve, 0))
     expect(mocks.mount).toHaveBeenCalledOnce()
 
     view.unmount()
@@ -185,7 +186,7 @@ describe('FrontLive2DWidget', () => {
       supportsModelSwitch: false,
       supportsTextureSwitch: false,
     }
-    mocks.mount.mockResolvedValue(vi.fn())
+    mocks.mount.mockResolvedValue({ cleanup: vi.fn() })
 
     render(
       <MemoryRouter>

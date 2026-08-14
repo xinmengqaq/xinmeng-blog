@@ -1,4 +1,4 @@
-import { memo, type KeyboardEvent } from 'react'
+import { memo, useRef, type KeyboardEvent } from 'react'
 
 import type { HeadingBlock as HeadingBlockType } from '../types'
 import { preserveEditorCaretAfterUpdate } from '../utils/dom'
@@ -17,6 +17,11 @@ const HeadingBlockComponent = ({
   onKeyDown,
 }: HeadingBlockProps) => {
   const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4'
+  const composingRef = useRef(false)
+  const commitInput = (editable: HTMLElement) =>
+    preserveEditorCaretAfterUpdate(editable, () =>
+      onChange({ ...block, html: editable.innerHTML }),
+    )
 
   return (
     <Tag
@@ -24,10 +29,14 @@ const HeadingBlockComponent = ({
       contentEditable={!readOnly}
       data-editor-input
       onInput={(event) => {
-        const editable = event.currentTarget
-        preserveEditorCaretAfterUpdate(editable, () =>
-          onChange({ ...block, html: editable.innerHTML }),
-        )
+        if (!composingRef.current) commitInput(event.currentTarget)
+      }}
+      onCompositionStart={() => {
+        composingRef.current = true
+      }}
+      onCompositionEnd={(event) => {
+        composingRef.current = false
+        commitInput(event.currentTarget)
       }}
       onKeyDown={onKeyDown}
       suppressContentEditableWarning

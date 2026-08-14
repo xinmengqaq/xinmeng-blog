@@ -44,24 +44,48 @@ export const useBlockEditorModel = (
   const blocksRef = useRef(blocks)
   const historyRef = useRef(createHistory(blocks))
   const focusedRef = useRef(false)
-  const lastEmittedValue = useRef<string | null>(null)
+  const pendingExternalValueRef = useRef<string | null>(null)
   const onChangeRef = useRef(onChange)
 
   onChangeRef.current = onChange
 
-  useEffect(() => {
-    if (value === lastEmittedValue.current || focusedRef.current) return
-    const parsed = parseMarkdownToBlocks(value)
+  const applyExternalValue = useCallback((nextValue: string) => {
+    const parsed = parseMarkdownToBlocks(nextValue)
     blocksRef.current = parsed
     historyRef.current = createHistory(parsed)
     setBlocks(parsed)
-  }, [value])
+    setInsertAfterId(null)
+    setToolbarBlockId(null)
+    setSelectedBlockIds([])
+    selectionAnchorRef.current = null
+    pendingExternalValueRef.current = null
+  }, [])
+
+  useEffect(() => {
+    if (value === serializeBlocksToMarkdown(blocksRef.current)) {
+      pendingExternalValueRef.current = null
+      return
+    }
+    if (focusedRef.current) {
+      pendingExternalValueRef.current = value
+      return
+    }
+    applyExternalValue(value)
+  }, [applyExternalValue, value])
+
+  const handleEditorBlur = useCallback(() => {
+    const stillFocused = Boolean(
+      editorRef.current?.contains(document.activeElement),
+    )
+    focusedRef.current = stillFocused
+    if (stillFocused || pendingExternalValueRef.current === null) return
+    applyExternalValue(pendingExternalValueRef.current)
+  }, [applyExternalValue])
 
   const emit = useCallback((next: EditorBlock[]) => {
     blocksRef.current = next
     setBlocks(next)
     const markdown = serializeBlocksToMarkdown(next)
-    lastEmittedValue.current = markdown
     onChangeRef.current(markdown)
     setSelectedBlockIds((current) =>
       current.filter((blockId) => next.some((block) => block.id === blockId)),
@@ -300,6 +324,7 @@ export const useBlockEditorModel = (
     editorRef,
     lastFocusedBlockIdRef,
     focusedRef,
+    handleEditorBlur,
     insertAfterId,
     setInsertAfterId,
     toolbarBlockId,

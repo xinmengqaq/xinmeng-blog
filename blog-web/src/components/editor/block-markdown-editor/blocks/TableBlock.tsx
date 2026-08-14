@@ -54,6 +54,20 @@ const TableBlockComponent = ({
   const [menuOpen, setMenuOpen] = useState(false)
   const [columnDrag, setColumnDrag] = useState<ColumnDrag | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const composingCellRef = useRef<string | null>(null)
+  const commitCell = (cellId: string, editable: HTMLElement) =>
+    preserveEditorCaretAfterUpdate(editable, () =>
+      onChange({
+        ...block,
+        rows: block.rows.map((currentRow) =>
+          currentRow.map((currentCell) =>
+            currentCell.id === cellId
+              ? { ...currentCell, html: editable.innerHTML }
+              : currentCell,
+          ),
+        ),
+      }),
+    )
   const areas = useMemo(() => getTableCellAreas(block), [block])
   const dimensions = useMemo(() => getTableDimensions(block), [block])
   const activeArea = areas.find((area) => area.cell.id === activeId) ?? areas[0]
@@ -274,22 +288,16 @@ const TableBlockComponent = ({
                         data-editor-input
                         data-table-cell-input
                         onInput={(event) => {
-                          const editable = event.currentTarget
-                          preserveEditorCaretAfterUpdate(editable, () =>
-                            onChange({
-                              ...block,
-                              rows: block.rows.map((currentRow) =>
-                                currentRow.map((currentCell) =>
-                                  currentCell.id === cell.id
-                                    ? {
-                                        ...currentCell,
-                                        html: editable.innerHTML,
-                                      }
-                                    : currentCell,
-                                ),
-                              ),
-                            }),
-                          )
+                          if (composingCellRef.current !== cell.id) {
+                            commitCell(cell.id, event.currentTarget)
+                          }
+                        }}
+                        onCompositionStart={() => {
+                          composingCellRef.current = cell.id
+                        }}
+                        onCompositionEnd={(event) => {
+                          composingCellRef.current = null
+                          commitCell(cell.id, event.currentTarget)
                         }}
                         onKeyDown={handleCellKeyDown}
                         suppressContentEditableWarning

@@ -53,12 +53,10 @@ export const ArticleEditorSidebar = ({
         error={errors.title}
         htmlFor="article-title"
         label="标题"
-        hint={`${form.title.length}/120`}
       >
         <Input
           aria-label="标题"
           id="article-title"
-          maxLength={121}
           value={form.title}
           error={Boolean(errors.title)}
           onChange={(event) => onUpdate('title', event.target.value)}
@@ -68,13 +66,11 @@ export const ArticleEditorSidebar = ({
         error={errors.summary}
         htmlFor="article-summary"
         label="摘要"
-        hint={`${form.summary.length}/300`}
       >
         <textarea
           aria-label="摘要"
           id="article-summary"
           className="article-editor-textarea"
-          maxLength={301}
           value={form.summary}
           aria-invalid={Boolean(errors.summary) || undefined}
           onChange={(event) => onUpdate('summary', event.target.value)}

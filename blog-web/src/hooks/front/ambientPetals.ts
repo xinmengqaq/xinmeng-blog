@@ -34,6 +34,9 @@ class AmbientPetalRenderer {
   private frame: number | null = null
   private width = window.innerWidth
   private height = window.innerHeight
+  private readingColumnStart = 0
+  private readingColumnEnd = 0
+  private readingTriggerLine = 0
   private petals = createPetals(this.width, this.height)
 
   constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) {
@@ -54,6 +57,9 @@ class AmbientPetalRenderer {
     this.canvas.style.width = `${this.width}px`
     this.canvas.style.height = `${this.height}px`
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0)
+    this.readingColumnStart = this.width * 0.18
+    this.readingColumnEnd = this.width * 0.82
+    this.readingTriggerLine = this.height * 0.42
     this.petals = createPetals(this.width, this.height)
   }
 
@@ -82,7 +88,7 @@ class AmbientPetalRenderer {
     }
 
     this.context.clearRect(0, 0, this.width, this.height)
-    const readingAreaVisible = window.scrollY > this.height * 0.42
+    const readingAreaVisible = window.scrollY > this.readingTriggerLine
     for (const petal of this.petals) {
       petal.y += petal.speed
       petal.phase += 0.008
@@ -95,8 +101,8 @@ class AmbientPetalRenderer {
 
       const overReadingColumn =
         readingAreaVisible &&
-        petal.x > this.width * 0.18 &&
-        petal.x < this.width * 0.82
+        petal.x > this.readingColumnStart &&
+        petal.x < this.readingColumnEnd
       this.context.globalAlpha = overReadingColumn ? 0.11 : 0.48
       this.context.save()
       this.context.translate(petal.x, petal.y)

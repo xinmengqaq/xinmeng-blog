@@ -197,7 +197,7 @@ describe('后台文章列表页', () => {
       await screen.findByRole('button', { name: `删除 ${article.title}` }),
     )
     expect(
-      screen.getByRole('heading', { name: '删除文章' }),
+      await screen.findByRole('heading', { name: '删除文章' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toHaveTextContent(article.title)
   })
@@ -213,7 +213,7 @@ describe('后台文章列表页', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: `删除 ${article.title}` }),
     )
-    fireEvent.click(screen.getByRole('button', { name: '删除文章' }))
+    fireEvent.click(await screen.findByRole('button', { name: '删除文章' }))
 
     expect(await screen.findByText('文章删除失败')).toBeInTheDocument()
     expect(screen.getByText(article.title)).toBeInTheDocument()

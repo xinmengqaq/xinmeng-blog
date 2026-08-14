@@ -9,6 +9,7 @@ type PointerPetalElements = {
 const EDITABLE_TARGETS =
   'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
 const INTERACTIVE_TARGETS = 'a, button, summary, [role="button"]'
+const TICKER_IDLE_TIMEOUT = 600
 const NATIVE_CURSOR_VALUES = new Set([
   'text',
   'vertical-text',
@@ -56,6 +57,8 @@ export class PointerPetalController {
   private trailDistance = 0
   private nextTrailParticle = 0
   private nextParticle = 0
+  private tickerRegistered = false
+  private tickerIdleTimer: number | undefined
 
   constructor({ follower, trail, particles }: PointerPetalElements) {
     this.follower = follower
@@ -75,7 +78,6 @@ export class PointerPetalController {
       ease: 'power3.out',
     })
     this.tickTrail = () => this.updateTrail()
-    gsap.ticker.add(this.tickTrail)
     document.documentElement.classList.add('front-custom-cursor')
   }
 
@@ -95,6 +97,7 @@ export class PointerPetalController {
       return
     }
     this.setNativeCursor(false)
+    this.ensureTicker()
 
     const hadPosition = this.hasPosition
     const deltaX = hadPosition ? event.clientX - this.lastX : 0
@@ -179,7 +182,8 @@ export class PointerPetalController {
   }
 
   destroy() {
-    gsap.ticker.remove(this.tickTrail)
+    window.clearTimeout(this.tickerIdleTimer)
+    this.removeTicker()
     gsap.killTweensOf(this.trailProxy)
     gsap.killTweensOf(this.all)
     gsap.set(this.all, { autoAlpha: 0 })
@@ -221,7 +225,26 @@ export class PointerPetalController {
       gsap.set(this.trail, { autoAlpha: 0 })
       this.hasPosition = false
       this.trailDistance = 0
+      this.removeTicker()
     }
+  }
+
+  private ensureTicker() {
+    if (!this.tickerRegistered) {
+      gsap.ticker.add(this.tickTrail)
+      this.tickerRegistered = true
+    }
+    window.clearTimeout(this.tickerIdleTimer)
+    this.tickerIdleTimer = window.setTimeout(
+      () => this.removeTicker(),
+      TICKER_IDLE_TIMEOUT,
+    )
+  }
+
+  private removeTicker() {
+    if (!this.tickerRegistered) return
+    gsap.ticker.remove(this.tickTrail)
+    this.tickerRegistered = false
   }
 
   private setInteractive(interactive: boolean) {

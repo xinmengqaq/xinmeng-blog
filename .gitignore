@@ -78,6 +78,7 @@
 **/*.py[cod]
 **/.venv/
 **/venv/
+xinmeng-blog-server
 
 # 运行数据、日志、缓存与临时目录
 **/logs/

@@ -35,6 +35,10 @@ vi.mock('@/components/front/layout/FrontSceneBanner', () => ({
   }) => <section ref={rootRef}>{children}</section>,
 }))
 
+vi.mock('./HeroMusicPlayer', () => ({
+  HeroMusicPlayer: () => null,
+}))
+
 vi.mock('@/components/front/visual', () => ({
   FrontAssetImage: () => <span />,
   FrontBrandMark: () => <span />,

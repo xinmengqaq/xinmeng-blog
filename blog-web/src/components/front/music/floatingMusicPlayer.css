@@ -103,9 +103,11 @@
 }
 
 .floating-music-player__track > span {
+  min-width: max-content;
   color: #9693a0;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .floating-music-player__track > input {

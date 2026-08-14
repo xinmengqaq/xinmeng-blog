@@ -281,6 +281,10 @@
   background: rgb(255 245 249 / 70%);
   animation: station-wave-back 11s ease-in-out infinite alternate;
 }
+.front-scene-banner__wave.front-wave-paused,
+.front-scene-banner__wave.front-wave-paused::before {
+  animation-play-state: paused;
+}
 .station-hero {
   height: min(85dvh, 41.667vw);
   min-height: 640px;

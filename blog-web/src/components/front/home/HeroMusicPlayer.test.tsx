@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { FrontMusicPlayerProvider } from '@/hooks/front/musicPlayerContext'
+
 const mocks = vi.hoisted(() => ({
   play: vi.fn().mockResolvedValue(true),
   fromTo: vi.fn((...args: [unknown, { y?: number }, unknown]) => {
@@ -103,7 +105,12 @@ describe('首页头图音乐播放器', () => {
 
   it('请求成功后默认播放，并在首页遮罩结束后只入场一次', async () => {
     // Given 首页音乐仍在请求，页面加载遮罩仍显示
-    const view = render(<HeroMusicPlayer />)
+    const renderPlayer = () => (
+      <FrontMusicPlayerProvider>
+        <HeroMusicPlayer />
+      </FrontMusicPlayerProvider>
+    )
+    const view = render(renderPlayer())
     expect(screen.queryByLabelText('头图音乐播放器')).not.toBeInTheDocument()
 
     // When 公开音乐请求成功
@@ -126,7 +133,7 @@ describe('首页头图音乐播放器', () => {
       ],
     }
     mocks.query.isSuccess = true
-    view.rerender(<HeroMusicPlayer />)
+    view.rerender(renderPlayer())
 
     // Then 首页立即请求播放第一首，但遮罩期间不执行入场
     await waitFor(() =>
@@ -139,7 +146,7 @@ describe('首页头图音乐播放器', () => {
 
     // When 首页加载遮罩结束
     mocks.pageTransitionActive = false
-    view.rerender(<HeroMusicPlayer />)
+    view.rerender(renderPlayer())
 
     // Then 播放器执行一次与头图同步的入场，切歌不重复整块入场
     expect(entranceCalls()).toHaveLength(1)
@@ -158,10 +165,8 @@ describe('首页头图音乐播放器', () => {
     await waitFor(() =>
       expect(mocks.play).toHaveBeenLastCalledWith(
         expect.objectContaining({ id: 2 }),
-        true,
       ),
     )
-    expect(mocks.stopPreview).toHaveBeenCalledTimes(1)
     expect(entranceCalls()).toHaveLength(1)
   })
 })

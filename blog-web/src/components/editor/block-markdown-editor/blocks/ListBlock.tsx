@@ -29,6 +29,18 @@ const ListBlockComponent = ({
 }: ListBlockProps) => {
   const Tag = block.type === 'ordered-list' ? 'ol' : 'ul'
   const listRef = useRef<HTMLOListElement & HTMLUListElement>(null)
+  const composingItemRef = useRef<string | null>(null)
+  const commitItem = (itemId: string, editable: HTMLElement) =>
+    preserveEditorCaretAfterUpdate(editable, () =>
+      onChange({
+        ...block,
+        items: block.items.map((current) =>
+          current.id === itemId
+            ? { ...current, html: editable.innerHTML }
+            : current,
+        ),
+      }),
+    )
 
   const focusItem = (itemId: string) => {
     requestAnimationFrame(() => {
@@ -76,17 +88,16 @@ const ListBlockComponent = ({
             contentEditable={!readOnly}
             data-editor-input
             onInput={(event) => {
-              const editable = event.currentTarget
-              preserveEditorCaretAfterUpdate(editable, () =>
-                onChange({
-                  ...block,
-                  items: block.items.map((current) =>
-                    current.id === item.id
-                      ? { ...current, html: editable.innerHTML }
-                      : current,
-                  ),
-                }),
-              )
+              if (composingItemRef.current !== item.id) {
+                commitItem(item.id, event.currentTarget)
+              }
+            }}
+            onCompositionStart={() => {
+              composingItemRef.current = item.id
+            }}
+            onCompositionEnd={(event) => {
+              composingItemRef.current = null
+              commitItem(item.id, event.currentTarget)
             }}
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) {

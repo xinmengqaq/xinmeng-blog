@@ -33,8 +33,6 @@ export const emptyArticleForm: ArticleForm = {
 export const validateArticleForm = (form: ArticleForm) => {
   const errors: ArticleFormErrors = {}
   if (!form.title.trim()) errors.title = '标题不能为空'
-  else if (form.title.length > 120) errors.title = '标题最多 120 个字符'
-  if (form.summary.length > 300) errors.summary = '摘要最多 300 个字符'
   if (!form.content.trim()) errors.content = '正文不能为空'
   return errors
 }

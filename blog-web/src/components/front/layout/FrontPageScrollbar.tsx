@@ -61,9 +61,14 @@ export const FrontPageScrollbar = () => {
       }, IDLE_DELAY)
     }
 
+    let frame = 0
     const handleScroll = () => {
-      updateThumb()
-      showTemporarily()
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        updateThumb()
+        showTemporarily()
+      })
     }
     const handleResize = () => updateThumb()
     const resizeObserver = new ResizeObserver(updateThumb)
@@ -75,6 +80,7 @@ export const FrontPageScrollbar = () => {
     resizeObserver.observe(document.body)
 
     return () => {
+      window.cancelAnimationFrame(frame)
       window.clearTimeout(hideTimerRef.current)
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)

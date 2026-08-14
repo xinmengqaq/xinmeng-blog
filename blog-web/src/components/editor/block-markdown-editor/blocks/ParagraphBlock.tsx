@@ -1,4 +1,4 @@
-import { memo, type KeyboardEvent } from 'react'
+import { memo, useRef, type KeyboardEvent } from 'react'
 
 import type { TextBlock } from '../types'
 import { preserveEditorCaretAfterUpdate } from '../utils/dom'
@@ -19,24 +19,36 @@ const ParagraphBlockComponent = ({
   onChange,
   onKeyDown,
   onTextChange,
-}: ParagraphBlockProps) => (
-  <p
-    className="block-editor__paragraph block-editor__editable"
-    contentEditable={!readOnly}
-    data-editor-input
-    data-placeholder={placeholder}
-    onInput={(event) => {
-      const editable = event.currentTarget
-      preserveEditorCaretAfterUpdate(editable, () => {
-        onChange({ ...block, html: editable.innerHTML })
-        onTextChange(editable.textContent ?? '')
-      })
-    }}
-    onKeyDown={onKeyDown}
-    suppressContentEditableWarning
-    dangerouslySetInnerHTML={{ __html: block.html }}
-  />
-)
+}: ParagraphBlockProps) => {
+  const composingRef = useRef(false)
+  const commitInput = (editable: HTMLElement) =>
+    preserveEditorCaretAfterUpdate(editable, () => {
+      onChange({ ...block, html: editable.innerHTML })
+      onTextChange(editable.textContent ?? '')
+    })
+
+  return (
+    <p
+      className="block-editor__paragraph block-editor__editable"
+      contentEditable={!readOnly}
+      data-editor-input
+      data-placeholder={placeholder}
+      onInput={(event) => {
+        if (!composingRef.current) commitInput(event.currentTarget)
+      }}
+      onCompositionStart={() => {
+        composingRef.current = true
+      }}
+      onCompositionEnd={(event) => {
+        composingRef.current = false
+        commitInput(event.currentTarget)
+      }}
+      onKeyDown={onKeyDown}
+      suppressContentEditableWarning
+      dangerouslySetInnerHTML={{ __html: block.html }}
+    />
+  )
+}
 
 export const ParagraphBlock = memo(
   ParagraphBlockComponent,

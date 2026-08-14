@@ -6,11 +6,54 @@ import {
   screen,
   within,
 } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ImageDraft } from '@/types/file'
 
 import { BlockMarkdownEditor } from './BlockMarkdownEditor'
+
+const editableCases = [
+  {
+    name: '段落',
+    value: '段落',
+    initial: '段落',
+    changed: '新段落',
+    expected: '新段落',
+    empty: '',
+  },
+  {
+    name: '标题',
+    value: '# 标题',
+    initial: '标题',
+    changed: '新标题',
+    expected: '# 新标题',
+    empty: '#',
+  },
+  {
+    name: '引用',
+    value: '> 引用',
+    initial: '引用',
+    changed: '新引用',
+    expected: '> 新引用',
+    empty: '>',
+  },
+  {
+    name: '列表项',
+    value: '- 列表',
+    initial: '列表',
+    changed: '新列表',
+    expected: '- 新列表',
+    empty: '-',
+  },
+  {
+    name: '表格单元格',
+    value: '| 单元格 |\n| --- |',
+    initial: '单元格',
+    changed: '新单元格',
+    expected: '| 新单元格 |\n| --- |',
+    empty: '|  |\n| --- |',
+  },
+]
 
 const selectText = (element: HTMLElement) => {
   const text = element.firstChild
@@ -33,6 +76,8 @@ const selectContents = (element: HTMLElement) => {
 }
 
 describe('BlockMarkdownEditor', () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it('应在连续画布中渲染基础 Markdown 块', () => {
     render(
       <BlockMarkdownEditor
@@ -211,6 +256,92 @@ describe('BlockMarkdownEditor', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it.each(editableCases)(
+    '$name 应同步真实输入和删除后的最终 Markdown',
+    ({ value, initial, changed, expected, empty }) => {
+      const onChange = vi.fn()
+      render(<BlockMarkdownEditor value={value} onChange={onChange} />)
+      const editable = screen.getByText(initial)
+
+      editable.innerHTML = changed
+      fireEvent.input(editable, { inputType: 'insertText', data: changed })
+      expect(onChange).toHaveBeenLastCalledWith(expected)
+
+      editable.innerHTML = ''
+      fireEvent.input(editable, {
+        inputType: 'deleteContentBackward',
+        data: null,
+      })
+      expect(onChange).toHaveBeenLastCalledWith(empty)
+    },
+  )
+
+  it.each(editableCases)(
+    '$name 的完整输入法组合期间不应提交中间文字',
+    ({ value, initial, changed, expected }) => {
+      const onChange = vi.fn()
+      render(<BlockMarkdownEditor value={value} onChange={onChange} />)
+      const editable = screen.getByText(initial)
+      const finalText = changed
+
+      fireEvent.compositionStart(editable, { data: '' })
+      editable.innerHTML = 'n'
+      fireEvent.input(editable, {
+        data: 'n',
+        inputType: 'insertCompositionText',
+        isComposing: true,
+      })
+      fireEvent.compositionUpdate(editable, { data: 'n' })
+      editable.innerHTML = finalText
+      fireEvent.input(editable, {
+        data: finalText,
+        inputType: 'insertCompositionText',
+        isComposing: true,
+      })
+      fireEvent.compositionUpdate(editable, { data: finalText })
+
+      expect(onChange).not.toHaveBeenCalled()
+
+      fireEvent.compositionEnd(editable, { data: finalText })
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenLastCalledWith(expected)
+      expect(editable).toHaveTextContent(finalText)
+    },
+  )
+
+  it('聚焦期间收到外部值后应在编辑器失焦时应用最新值', () => {
+    const frames: FrameRequestCallback[] = []
+    const requestFrame = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frames.push(callback)
+        return frames.length
+      })
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <BlockMarkdownEditor value="本地正文" onChange={onChange} />,
+    )
+    const editable = screen.getByText('本地正文')
+    editable.focus()
+
+    editable.innerHTML = '本地修改'
+    fireEvent.input(editable)
+    rerender(<BlockMarkdownEditor value="本地修改" onChange={onChange} />)
+
+    rerender(<BlockMarkdownEditor value="服务端正文" onChange={onChange} />)
+    expect(screen.getByText('本地修改')).toBeInTheDocument()
+
+    editable.blur()
+    act(() => frames.splice(0).forEach((callback) => callback(0)))
+
+    expect(screen.getByText('服务端正文')).toBeInTheDocument()
+
+    rerender(<BlockMarkdownEditor value="本地修改" onChange={onChange} />)
+    expect(screen.getByText('本地修改')).toBeInTheDocument()
+    requestFrame.mockRestore()
+  })
+
   it('不再占用浏览器常用的 Ctrl+E 和 Ctrl+Shift+D', () => {
     render(<BlockMarkdownEditor value="正文" onChange={vi.fn()} />)
     const paragraph = screen.getByText('正文')
@@ -325,6 +456,109 @@ describe('BlockMarkdownEditor', () => {
     fireEvent.click(handles[2], { shiftKey: true })
 
     expect(container.querySelectorAll('.is-multi-selected')).toHaveLength(3)
+  })
+
+  it('从块间空白拖框应按 pointer 事件链多选相交块', () => {
+    const { container } = render(
+      <BlockMarkdownEditor value={'第一段\n\n第二段'} onChange={vi.fn()} />,
+    )
+    const editor = screen.getByLabelText('块状 Markdown 编辑器')
+    const documentSurface = container.querySelector<HTMLElement>(
+      '.block-editor__document',
+    )!
+    const blocks = container.querySelectorAll<HTMLElement>(
+      '.block-editor__block',
+    )
+    vi.spyOn(blocks[0], 'getBoundingClientRect').mockReturnValue({
+      left: 20,
+      top: 20,
+      right: 220,
+      bottom: 60,
+      width: 200,
+      height: 40,
+      x: 20,
+      y: 20,
+      toJSON: () => undefined,
+    })
+    vi.spyOn(blocks[1], 'getBoundingClientRect').mockReturnValue({
+      left: 20,
+      top: 80,
+      right: 220,
+      bottom: 120,
+      width: 200,
+      height: 40,
+      x: 20,
+      y: 80,
+      toJSON: () => undefined,
+    })
+
+    fireEvent.pointerDown(documentSurface, {
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+      pointerId: 1,
+    })
+    fireEvent.pointerMove(editor, {
+      clientX: 230,
+      clientY: 130,
+      pointerId: 1,
+    })
+
+    expect(
+      container.querySelector('.block-editor__selection-rect'),
+    ).toBeInTheDocument()
+
+    fireEvent.pointerUp(editor, {
+      clientX: 230,
+      clientY: 130,
+      pointerId: 1,
+    })
+
+    expect(container.querySelectorAll('.is-multi-selected')).toHaveLength(2)
+    expect(
+      container.querySelector('.block-editor__selection-rect'),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('已选择 2 个块')).toBeInTheDocument()
+  })
+
+  it('Ctrl 撤销和两种重做快捷键应恢复正文并保留编辑焦点', () => {
+    const onChange = vi.fn()
+    render(<BlockMarkdownEditor value="初始正文" onChange={onChange} />)
+    const editable = screen.getByText('初始正文')
+    editable.focus()
+    editable.innerHTML = '修改正文'
+    fireEvent.input(editable)
+
+    expect(fireEvent.keyDown(editable, { key: 'z', ctrlKey: true })).toBe(false)
+    expect(editable).toHaveTextContent('初始正文')
+    expect(editable).toHaveFocus()
+
+    expect(
+      fireEvent.keyDown(editable, {
+        key: 'z',
+        ctrlKey: true,
+        shiftKey: true,
+      }),
+    ).toBe(false)
+    expect(editable).toHaveTextContent('修改正文')
+    expect(editable).toHaveFocus()
+
+    fireEvent.keyDown(editable, { key: 'z', ctrlKey: true })
+    expect(fireEvent.keyDown(editable, { key: 'y', ctrlKey: true })).toBe(false)
+    expect(editable).toHaveTextContent('修改正文')
+    expect(editable).toHaveFocus()
+  })
+
+  it('Meta + Z 应使用编辑器历史并阻止浏览器默认撤销', () => {
+    render(<BlockMarkdownEditor value="初始正文" onChange={vi.fn()} />)
+    const editable = screen.getByText('初始正文')
+    editable.focus()
+    editable.innerHTML = '修改正文'
+    fireEvent.input(editable)
+
+    expect(fireEvent.keyDown(editable, { key: 'z', metaKey: true })).toBe(false)
+    expect(editable).toHaveTextContent('初始正文')
+    expect(editable).toHaveFocus()
   })
 
   it('批量删除应一次删除全部已选块', () => {
@@ -1109,7 +1343,7 @@ describe('BlockMarkdownEditor', () => {
     createObjectUrl.mockRestore()
   })
 
-  it('复制本地图片后移除其中一个块不应释放仍被历史和正文引用的草稿', () => {
+  it('复制本地图片后移除其中一个块不应释放仍被历史和正文引用的草稿', async () => {
     // Given 一个待保存图片块被复制为两个共享本地预览的块
     // When 管理员移除其中一个图片块
     // Then 剩余块继续显示且草稿保留给保存或撤销历史使用
@@ -1144,10 +1378,9 @@ describe('BlockMarkdownEditor', () => {
     fireEvent.click(screen.getAllByRole('img', { name: '待保存图片' })[0])
     fireEvent.click(screen.getByRole('button', { name: '移除图片' }))
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: '移除正文图片' })).getByRole(
-        'button',
-        { name: '移除图片' },
-      ),
+      within(
+        await screen.findByRole('dialog', { name: '移除正文图片' }),
+      ).getByRole('button', { name: '移除图片' }),
     )
 
     expect(screen.getAllByRole('img', { name: '待保存图片' })).toHaveLength(1)

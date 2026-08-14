@@ -6,8 +6,6 @@ import {
   type PointerEvent,
 } from 'react'
 
-import type { BlockEditorModel } from './useBlockEditorModel'
-
 export type BlockSelectionRect = {
   left: number
   top: number
@@ -57,76 +55,68 @@ const isSelectionStart = (target: HTMLElement) =>
     ),
   )
 
-export const useBlockSelectionDrag = (
-  model: BlockEditorModel,
-  enabled: boolean,
-) => {
+export const useBlockSelectionDrag = (enabled: boolean) => {
   const dragRef = useRef<DragState | null>(null)
   const suppressClickRef = useRef(false)
   const [selectionRect, setSelectionRect] = useState<BlockSelectionRect | null>(
     null,
   )
 
-  const updateSelection = useCallback(
-    (event: PointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current
-      if (!drag) return
-      const selection = getRect(
-        drag.startX,
-        drag.startY,
-        event.clientX,
-        event.clientY,
-      )
-      if (
-        !drag.active &&
-        selection.width < DRAG_THRESHOLD &&
-        selection.height < DRAG_THRESHOLD
-      ) {
-        return
-      }
-      drag.active = true
-      event.preventDefault()
-      setSelectionRect(selection)
-      const selectedIds = Array.from(
-        model.editorRef.current?.querySelectorAll<HTMLElement>(
-          '[data-block-id]',
-        ) ?? [],
-      )
-        .filter((block) => intersects(block.getBoundingClientRect(), selection))
-        .map((block) => block.dataset.blockId)
-        .filter((blockId): blockId is string => Boolean(blockId))
-      model.clearBlockSelection()
-      selectedIds.forEach((blockId) => model.selectBlock(blockId, 'toggle'))
-    },
-    [model],
-  )
+  const updateSelection = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    if (!drag) return
+    const selection = getRect(
+      drag.startX,
+      drag.startY,
+      event.clientX,
+      event.clientY,
+    )
+    if (
+      !drag.active &&
+      selection.width < DRAG_THRESHOLD &&
+      selection.height < DRAG_THRESHOLD
+    ) {
+      return
+    }
+    drag.active = true
+    event.preventDefault()
+    setSelectionRect(selection)
+    const selectedIds = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[data-block-id]'),
+    )
+      .filter((block) => intersects(block.getBoundingClientRect(), selection))
+      .map((block) => block.dataset.blockId)
+      .filter((blockId): blockId is string => Boolean(blockId))
+    return selectedIds
+  }, [])
 
   const onPointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (!enabled || event.button !== 0) return
+      if (!enabled || event.button !== 0) return false
       const target = event.target as HTMLElement
-      if (!isSelectionStart(target)) return
+      if (!isSelectionStart(target)) return false
       dragRef.current = {
         startX: event.clientX,
         startY: event.clientY,
         active: false,
       }
       setSelectionRect(null)
-      model.clearBlockSelection()
       event.currentTarget.setPointerCapture?.(event.pointerId)
+      return true
     },
-    [enabled, model],
+    [enabled],
   )
 
   const onPointerUp = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       const drag = dragRef.current
-      if (!drag) return
-      if (drag.active) updateSelection(event)
+      if (!drag) return null
+      const selectedIds = drag.active ? updateSelection(event) : null
       suppressClickRef.current = drag.active
       dragRef.current = null
       setSelectionRect(null)
       event.currentTarget.releasePointerCapture?.(event.pointerId)
+      return selectedIds
     },
     [updateSelection],
   )

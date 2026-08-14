@@ -1,4 +1,4 @@
-import { memo, type KeyboardEvent } from 'react'
+import { memo, useRef, type KeyboardEvent } from 'react'
 
 import type { TextBlock } from '../types'
 import { preserveEditorCaretAfterUpdate } from '../utils/dom'
@@ -15,22 +15,34 @@ const QuoteBlockComponent = ({
   readOnly,
   onChange,
   onKeyDown,
-}: QuoteBlockProps) => (
-  <blockquote
-    className="block-editor__quote block-editor__editable"
-    contentEditable={!readOnly}
-    data-editor-input
-    onInput={(event) => {
-      const editable = event.currentTarget
-      preserveEditorCaretAfterUpdate(editable, () =>
-        onChange({ ...block, html: editable.innerHTML }),
-      )
-    }}
-    onKeyDown={onKeyDown}
-    suppressContentEditableWarning
-    dangerouslySetInnerHTML={{ __html: block.html }}
-  />
-)
+}: QuoteBlockProps) => {
+  const composingRef = useRef(false)
+  const commitInput = (editable: HTMLElement) =>
+    preserveEditorCaretAfterUpdate(editable, () =>
+      onChange({ ...block, html: editable.innerHTML }),
+    )
+
+  return (
+    <blockquote
+      className="block-editor__quote block-editor__editable"
+      contentEditable={!readOnly}
+      data-editor-input
+      onInput={(event) => {
+        if (!composingRef.current) commitInput(event.currentTarget)
+      }}
+      onCompositionStart={() => {
+        composingRef.current = true
+      }}
+      onCompositionEnd={(event) => {
+        composingRef.current = false
+        commitInput(event.currentTarget)
+      }}
+      onKeyDown={onKeyDown}
+      suppressContentEditableWarning
+      dangerouslySetInnerHTML={{ __html: block.html }}
+    />
+  )
+}
 
 export const QuoteBlock = memo(
   QuoteBlockComponent,

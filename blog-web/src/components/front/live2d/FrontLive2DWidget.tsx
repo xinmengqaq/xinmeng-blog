@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { frontLive2DConfig } from '@/config/frontLive2D'
 
+import type { Live2DInstance } from './live2dRuntime'
 import { mountFrontLive2D } from './live2dRuntime'
 import { selectFrontLive2DTools } from './live2dTools'
 
@@ -29,11 +30,23 @@ const syncBannerVisibility = () => {
 
 export const FrontLive2DWidget = () => {
   const { pathname } = useLocation()
+  const cleanupRef = useRef<Live2DInstance['cleanup'] | undefined>(undefined)
 
   useEffect(() => {
+    let frame = 0
+    const handleScroll = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        syncBannerVisibility()
+      })
+    }
     syncBannerVisibility()
-    window.addEventListener('scroll', syncBannerVisibility, { passive: true })
-    return () => window.removeEventListener('scroll', syncBannerVisibility)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [pathname])
 
   useEffect(() => {
@@ -43,11 +56,10 @@ export const FrontLive2DWidget = () => {
     const desktopQuery = window.matchMedia(frontLive2DConfig.desktopMediaQuery)
     let disposed = false
     let mounting = false
-    let cleanup: (() => void) | undefined
 
     const unmountWidget = () => {
-      cleanup?.()
-      cleanup = undefined
+      cleanupRef.current?.()
+      cleanupRef.current = undefined
     }
 
     const syncWidget = async () => {
@@ -55,7 +67,7 @@ export const FrontLive2DWidget = () => {
         unmountWidget()
         return
       }
-      if (cleanup || mounting || !isBannerClear()) return
+      if (cleanupRef.current || mounting || !isBannerClear()) return
 
       mounting = true
       await Promise.resolve()
@@ -65,14 +77,14 @@ export const FrontLive2DWidget = () => {
       }
 
       try {
-        const mountedCleanup = await mountFrontLive2D(
+        const instance = await mountFrontLive2D(
           model,
           selectFrontLive2DTools(model),
         )
 
-        if (disposed || !desktopQuery.matches) mountedCleanup()
+        if (disposed || !desktopQuery.matches) instance.cleanup()
         else {
-          cleanup = mountedCleanup
+          cleanupRef.current = instance.cleanup
           syncBannerVisibility()
         }
       } catch {
@@ -82,13 +94,23 @@ export const FrontLive2DWidget = () => {
       }
     }
 
+    let scrollFrame = 0
+    const handleScroll = () => {
+      if (scrollFrame) return
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0
+        void syncWidget()
+      })
+    }
+
     void syncWidget()
-    window.addEventListener('scroll', syncWidget, { passive: true })
+    window.addEventListener('scroll', handleScroll, { passive: true })
     desktopQuery.addEventListener('change', syncWidget)
 
     return () => {
       disposed = true
-      window.removeEventListener('scroll', syncWidget)
+      window.cancelAnimationFrame(scrollFrame)
+      window.removeEventListener('scroll', handleScroll)
       desktopQuery.removeEventListener('change', syncWidget)
       unmountWidget()
     }

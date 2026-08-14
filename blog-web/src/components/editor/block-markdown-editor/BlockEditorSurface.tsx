@@ -11,6 +11,7 @@ import {
 import type { BlockEditorInteractions } from './hooks/useBlockEditorInteractions'
 import type { EditorImageUpload } from './hooks/useEditorImageUpload'
 import { useSelectedEditorImage } from './hooks/useSelectedEditorImage'
+import { useBlockSelectionDrag } from './hooks/useBlockSelectionDrag'
 import {
   isEmptyEditorBlock,
   type BlockEditorModel,
@@ -45,6 +46,13 @@ export const BlockEditorSurface = ({
   imageUpload,
 }: BlockEditorSurfaceProps) => {
   const selectedImage = useSelectedEditorImage(model)
+  const selectionDrag = useBlockSelectionDrag(!readOnly && !disabled)
+
+  const applyDraggedSelection = (blockIds: string[] | null | undefined) => {
+    if (!blockIds) return
+    model.clearBlockSelection()
+    blockIds.forEach((blockId) => model.selectBlock(blockId, 'toggle'))
+  }
 
   const openImageAtCaret = () => {
     const active = document.activeElement
@@ -75,11 +83,7 @@ export const BlockEditorSurface = ({
     model.setShortcutDrawerOpen((current) => !current)
   }
   const onRootBlur = () => {
-    requestAnimationFrame(() => {
-      model.focusedRef.current = Boolean(
-        model.editorRef.current?.contains(document.activeElement),
-      )
-    })
+    requestAnimationFrame(model.handleEditorBlur)
   }
   const onRootContextMenu = (event: ReactMouseEvent<HTMLDivElement>) =>
     interactions.openTextToolbarOnContextMenu(event)
@@ -94,6 +98,7 @@ export const BlockEditorSurface = ({
         className,
       )}
       onBlur={onRootBlur}
+      onClickCapture={selectionDrag.onClickCapture}
       onFocus={() => {
         model.focusedRef.current = true
       }}
@@ -126,8 +131,25 @@ export const BlockEditorSurface = ({
         }
         interactions.openTextToolbarOnRightMouseDown(event)
       }}
+      onPointerCancel={selectionDrag.onPointerCancel}
+      onPointerDown={(event) => {
+        if (selectionDrag.onPointerDown(event)) model.clearBlockSelection()
+      }}
+      onPointerMove={(event) =>
+        applyDraggedSelection(selectionDrag.onPointerMove(event))
+      }
+      onPointerUp={(event) =>
+        applyDraggedSelection(selectionDrag.onPointerUp(event))
+      }
       onPaste={interactions.pasteBlocks}
     >
+      {selectionDrag.selectionRect ? (
+        <div
+          aria-hidden="true"
+          className="block-editor__selection-rect"
+          style={selectionDrag.selectionRect}
+        />
+      ) : null}
       {!readOnly ? (
         <div className="block-editor__utility-bar">
           <button

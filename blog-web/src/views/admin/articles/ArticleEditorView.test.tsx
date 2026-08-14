@@ -187,19 +187,38 @@ describe('后台文章编辑页', () => {
     expect(getArticleDetail).not.toHaveBeenCalled()
   })
 
-  it.each([
-    ['标题', '', '标题不能为空'],
-    ['标题', 'a'.repeat(121), '标题最多 120 个字符'],
-    ['摘要', 'a'.repeat(301), '摘要最多 300 个字符'],
-  ])('%s 校验失败时不应发送保存请求', (label, value, message) => {
+  it('标题为空时校验失败且不应发送保存请求', () => {
     renderEditor('create')
     fillValidForm()
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    fireEvent.change(screen.getByLabelText('标题'), { target: { value: '' } })
 
     fireEvent.click(screen.getByRole('button', { name: '保存文章' }))
 
-    expect(screen.getByText(message)).toBeInTheDocument()
+    expect(screen.getByText('标题不能为空')).toBeInTheDocument()
     expect(createArticle).not.toHaveBeenCalled()
+  })
+
+  it('标题和摘要没有前端字数上限且可以进入保存请求', async () => {
+    vi.mocked(createArticle).mockImplementationOnce(
+      () => new Promise(() => undefined),
+    )
+    renderEditor('create')
+    fillValidForm()
+    const longTitle = '标题'.repeat(100)
+    const longSummary = '摘要'.repeat(200)
+    fireEvent.change(screen.getByLabelText('标题'), {
+      target: { value: longTitle },
+    })
+    fireEvent.change(screen.getByLabelText('摘要'), {
+      target: { value: longSummary },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '保存文章' }))
+
+    await waitFor(() => expect(createArticle).toHaveBeenCalledOnce())
+    expect(createArticle).toHaveBeenCalledWith(
+      expect.objectContaining({ title: longTitle, summary: longSummary }),
+    )
   })
 
   it('正文为空时不应发送保存请求', () => {
@@ -244,7 +263,7 @@ describe('后台文章编辑页', () => {
     expect(createArticle).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: '返回文章列表' }))
-    expect(screen.getByText('放弃文章变更')).toBeInTheDocument()
+    expect(await screen.findByText('放弃文章变更')).toBeInTheDocument()
   })
 
   it('修改成功后应显示已保存', async () => {
@@ -284,7 +303,7 @@ describe('后台文章编辑页', () => {
     await screen.findByDisplayValue('已有文章')
 
     fireEvent.click(screen.getByRole('button', { name: '移除封面' }))
-    fireEvent.click(screen.getByRole('button', { name: '确认移除' }))
+    fireEvent.click(await screen.findByRole('button', { name: '确认移除' }))
     fireEvent.click(screen.getByRole('button', { name: '保存文章' }))
 
     await waitFor(() => expect(removeArticleCover).toHaveBeenCalledWith(7))
@@ -315,7 +334,7 @@ describe('后台文章编辑页', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '删除文章' }))
     expect(
-      screen.getByText('确认删除“已有文章”吗？此操作无法撤销。'),
+      await screen.findByText('确认删除“已有文章”吗？此操作无法撤销。'),
     ).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('button', { name: '删除文章' }).at(-1)!)
 
@@ -334,6 +353,8 @@ describe('后台文章编辑页', () => {
     renderEditor('edit')
     await screen.findByDisplayValue('已有文章')
     fireEvent.click(screen.getByRole('button', { name: '删除文章' }))
+
+    await screen.findByText('确认删除“已有文章”吗？此操作无法撤销。')
 
     fireEvent.click(screen.getAllByRole('button', { name: '删除文章' }).at(-1)!)
 
