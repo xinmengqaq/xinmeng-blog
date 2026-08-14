@@ -16,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest(
         classes = SpringbootApplication.class,
         properties = {
-                "spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable",
                 "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS user_mail_test; SET search_path TO user_mail_test"
         }
 )

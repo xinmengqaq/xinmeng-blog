@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.vite/
+.env
+.env.local
+.env.*.local
+nginx/conf/*.pem
+nginx/conf/*.key

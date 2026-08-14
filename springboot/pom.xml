@@ -32,6 +32,9 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <test.database.url>jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable</test.database.url>
+        <test.database.username>postgres</test.database.username>
+        <test.database.password>postgres</test.database.password>
     </properties>
 
     <dependencyManagement>
@@ -206,8 +209,49 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>-Dfile.encoding=UTF-8</argLine>
+                    <systemPropertyVariables>
+                        <spring.datasource.url>${test.database.url}</spring.datasource.url>
+                        <spring.datasource.username>${test.database.username}</spring.datasource.username>
+                        <spring.datasource.password>${test.database.password}</spring.datasource.password>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>test-database-url-env</id>
+            <activation>
+                <property>
+                    <name>env.TEST_DATABASE_URL</name>
+                </property>
+            </activation>
+            <properties>
+                <test.database.url>${env.TEST_DATABASE_URL}</test.database.url>
+            </properties>
+        </profile>
+        <profile>
+            <id>test-database-username-env</id>
+            <activation>
+                <property>
+                    <name>env.TEST_DB_USERNAME</name>
+                </property>
+            </activation>
+            <properties>
+                <test.database.username>${env.TEST_DB_USERNAME}</test.database.username>
+            </properties>
+        </profile>
+        <profile>
+            <id>test-database-password-env</id>
+            <activation>
+                <property>
+                    <name>env.TEST_DB_PASSWORD</name>
+                </property>
+            </activation>
+            <properties>
+                <test.database.password>${env.TEST_DB_PASSWORD}</test.database.password>
+            </properties>
+        </profile>
+    </profiles>
 </project>

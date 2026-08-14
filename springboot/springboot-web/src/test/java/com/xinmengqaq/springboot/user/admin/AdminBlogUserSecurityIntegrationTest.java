@@ -25,7 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = SpringbootApplication.class,
         properties = {
-                "spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable",
                 "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS admin_user_boundary_test; SET search_path TO admin_user_boundary_test",
                 "jwt.secret=eGlubWVuZ3FhcS1ibG9nLXNwcmluZ2Jvb3Q0LTIwMjY=",
                 "jwt.expire-seconds=3600",
@@ -48,8 +47,7 @@ class AdminBlogUserSecurityIntegrationTest {
     @BeforeEach
     void assertTestDatabase() throws Exception {
         try (Connection connection = dataSource.getConnection()) {
-            assertThat(connection.getMetaData().getURL())
-                    .isEqualTo("jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable");
+            assertThat(connection.getMetaData().getURL()).contains("/springboot_vue_test");
             try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery("SELECT current_database(), current_schema()")) {
                 assertThat(resultSet.next()).isTrue();

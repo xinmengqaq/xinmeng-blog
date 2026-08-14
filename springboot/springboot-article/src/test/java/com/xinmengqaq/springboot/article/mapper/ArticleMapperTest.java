@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @MybatisPlusTest(properties = {
         "spring.config.import=optional:file:../springboot-web/src/main/resources/application-local.yml",
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable",
         "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS article_mapper_test; SET search_path TO article_mapper_test",
         "spring.datasource.driver-class-name=org.postgresql.Driver",
         "mybatis-plus.mapper-locations=classpath*:mapper/**/*.xml",

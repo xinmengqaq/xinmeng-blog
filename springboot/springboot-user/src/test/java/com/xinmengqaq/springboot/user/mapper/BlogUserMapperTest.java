@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @MybatisPlusTest(properties = {
         "spring.config.import=optional:file:../springboot-web/src/main/resources/application-local.yml",
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable",
         "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS user_mapper_test; SET search_path TO user_mapper_test",
         "spring.datasource.driver-class-name=org.postgresql.Driver",
         "mybatis-plus.mapper-locations=classpath*:mapper/**/*.xml",
@@ -206,8 +205,7 @@ class BlogUserMapperTest {
     }
 
     private void assertTestDatabase(Connection connection) throws Exception {
-        assertThat(connection.getMetaData().getURL())
-                .isEqualTo("jdbc:postgresql://localhost:5432/springboot_vue_test?sslmode=disable");
+        assertThat(connection.getMetaData().getURL()).contains("/springboot_vue_test");
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT current_database(), current_schema()")) {
             assertThat(resultSet.next()).isTrue();

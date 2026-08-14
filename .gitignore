@@ -7,10 +7,12 @@
 /*
 !/.gitignore
 !/README.md
+!/docker-compose.yml
 !/springboot/
 !/blog-web/
 !/blog-fastapi/
 !/assets/
+!/pgsql/
 
 
 # 子项目仓库元数据与各自的忽略配置
@@ -43,8 +45,10 @@
 **/application-production.yml
 **/application-production.yaml
 **/application-production.properties
-/pgsql/
-/blog-web/nginx/
+/blog-web/nginx/*
+!/blog-web/nginx/conf/
+/blog-web/nginx/conf/*
+!/blog-web/nginx/conf/nginx.public.conf
 
 # 私钥、证书及常见凭据文件
 **/*.pem

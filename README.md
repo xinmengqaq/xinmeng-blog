@@ -158,7 +158,7 @@ VITE_API_BASE=/api
 
 ### PostgreSQL
 
-在 pgAdmin 中新建名为 `spring_blog` 的数据库，然后选中它并在“查询工具”中执行 `pgsql/schema.sql`。
+Docker 部署不需要在 pgAdmin 中手工建表，也不再使用旧的 `pgsql/schema.sql`。数据库结构由 Flyway 的 `V1` 基线统一创建和更新。
 
 默认管理员账号和密码均为 `admin`，首次登录后应立即修改密码。
 
@@ -183,52 +183,90 @@ npm run dev
 
 ## Docker 部署
 
-使用根目录的 `docker-compose.yml` 一键编排四个服务：PostgreSQL、Spring Boot、FastAPI 和 Nginx。
+项目使用 Docker Compose 编排 PostgreSQL、Spring Boot、FastAPI 和 Nginx。首次部署和后续更新都由 Docker 完成，不需要在宿主机安装 Java、Python、Node.js、PostgreSQL 或手工执行数据库脚本。
 
-### 1. 构建产物
+### 首次部署
 
-`springboot` 和 `blog-web` 的镜像直接复用本地构建产物，先完成打包：
+#### 1. 准备环境变量
 
-```powershell
-cd springboot
-mvn -pl springboot-web -am package -DskipTests
-```
-
-```powershell
-cd blog-web
-npm ci
-npm run build
-```
-
-### 2. 准备环境变量
-
-在仓库根目录创建 `.env`，`docker-compose.yml` 会按名字引用：
+参考根目录 `.env.example` 准备 `.env`，开源版设置：
 
 ```text
-DB_USER=<数据库用户>
-DB_PASSWORD=<数据库密码>
-DB_APP_USER=<应用数据库用户>
-DB_APP_PASSWORD=<应用数据库密码>
+DEPLOY_MODE=opensource
+
+DB_NAME=spring_blog
+DB_USER=<PostgreSQL 与两个后端共用的数据库用户>
+DB_PASSWORD=<共用数据库密码>
 PGDATA_HOST=<宿主机 PostgreSQL 数据目录，例如 C:/docker/blog_pgdata>
+
 JWT_SECRET=<与两个后端共用的 JWT 密钥>
+
 MAIL_HOST=<SMTP 服务器>
 MAIL_USERNAME=<发件邮箱>
 MAIL_PASSWORD=<邮箱授权码>
 MAIL_PORT=465
-# 可选：FastAPI 的 AI 能力
-OPENAI_BASE_URL=
-OPENAI_API_KEY=
+
 ```
 
-Spring Boot 与 FastAPI 必须使用同一份 `JWT_SECRET`。
+`DB_PASSWORD` 和 `JWT_SECRET` 应使用无法猜测的随机值。Spring Boot 与 FastAPI 使用同一个数据库账号，并且必须使用同一份 `JWT_SECRET`。
 
-### 3. 构建并启动
+默认管理员账号和密码均为 `admin`，由 `V1` 在空库首次建表时写入，数据库保存的是 BCrypt 哈希而不是明文。首次登录后应立即修改密码。
+
+#### 2. 一键启动
 
 ```powershell
-docker compose up -d --build
+docker compose --env-file .env up -d --build --wait
 ```
 
-启动后通过 `https://<你的域名>` 访问公开站点和管理后台。
+Docker 会自动构建项目镜像、启动数据库，再由官方 Flyway 镜像执行 `V1` 数据库基线，成功后才启动两个后端和 Nginx。`V1` 只写入默认管理员，不会插入演示文章、分类、标签、音乐或普通用户数据。
+
+开源部署还会在同一个 PostgreSQL 容器中创建 `springboot_vue_test` 测试库。业务库和测试库互相独立，不会增加第二个数据库容器。
+
+#### 3. 登录后台
+
+部署完成后访问：
+
+- 公开站点：`http://localhost/`
+- 管理后台：`http://localhost/admin/login`
+
+使用默认账号密码 `admin/admin` 登录，首次登录后应立即修改密码。
+
+### 更新已有部署
+
+保留首次部署时使用的 `.env` 和 PostgreSQL 数据目录，然后拉取新版本：
+
+```powershell
+git pull
+docker compose --env-file .env up -d --build --wait
+```
+
+更新时 Docker 会重新构建发生变化的应用镜像，并只执行尚未执行的数据库增量更新。已有管理员、用户、文章、分类、标签、音乐、站点配置和上传文件不会被重新初始化或覆盖。
+
+如果数据库更新失败，新版本后端不会启动。排查并修复错误后，可以使用同一个命令重新执行。
+
+不要执行 `docker compose down -v`，也不要删除 `PGDATA_HOST` 指向的目录；这两种操作会删除持久化数据库数据。只停止服务时使用：
+
+```powershell
+docker compose --env-file .env stop
+```
+
+再次启动仍使用同一个一键部署命令。
+
+### 服务器版本
+
+服务器同样使用根目录 `.env`，其中设置：
+
+```text
+DEPLOY_MODE=server
+```
+
+启动或更新命令：
+
+```powershell
+docker compose --env-file .env up -d --build --wait
+```
+
+服务器版本不会创建 `springboot_vue_test`。已有非空数据库第一次接入 Flyway 时登记为 `V1`，不会重新执行 `V1` 的建表和默认管理员数据；以后只执行新增的 `V2`、`V3` 等迁移。
 
 ## 访问地址
 

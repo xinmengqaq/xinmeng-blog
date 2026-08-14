@@ -1,0 +1,91 @@
+name: blog
+
+services:
+  db:
+    image: postgres:18
+    container_name: blog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-spring_blog}
+      DEPLOY_MODE: ${DEPLOY_MODE}
+      PGPORT: 5433
+    command: ["postgres", "-p", "5433"]
+    ports:
+      - "127.0.0.1:5433:5433"
+    volumes:
+      - ${PGDATA_HOST}:/var/lib/postgresql
+      - ./pgsql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -p 5433"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  db-migrate:
+    image: flyway/flyway:13.3.0
+    depends_on:
+      db:
+        condition: service_healthy
+    command: migrate
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5433/${DB_NAME:-spring_blog}
+      FLYWAY_USER: ${DB_USER}
+      FLYWAY_PASSWORD: ${DB_PASSWORD}
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+    volumes:
+      - ./pgsql/migrations:/flyway/sql:ro
+
+  springboot:
+    build: ./springboot
+    container_name: blog-springboot
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:postgresql://db:5433/${DB_NAME:-spring_blog}?currentSchema=public&sslmode=disable
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_PORT: ${MAIL_PORT}
+      DOCS_ENABLED: false
+      JWT_SECRET: ${JWT_SECRET}
+
+  fastapi:
+    build: ./blog-fastapi
+    container_name: blog-fastapi
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: production
+      DOCS_ENABLED: false
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5433/${DB_NAME:-spring_blog}
+      DB_ECHO: "false"
+      LOG_LEVEL: INFO
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE_SECONDS: 28800
+      JWT_CLOCK_SKEW_SECONDS: 120
+    volumes:
+      - blog-storage:/app/storage
+
+  nginx:
+    build: ./blog-web
+    container_name: blog-nginx
+    restart: unless-stopped
+    depends_on:
+      - springboot
+      - fastapi
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - blog-storage:/app/storage
+      - ./blog-web/nginx/conf/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+      - ./blog-web/nginx/conf/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+
+volumes:
+  blog-storage:
