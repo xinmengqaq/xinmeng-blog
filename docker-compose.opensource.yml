@@ -10,6 +10,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-spring_blog}
       DEPLOY_MODE: opensource
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
       PGPORT: 5433
     command: ["postgres", "-p", "5433"]
     ports:
@@ -45,8 +47,8 @@ services:
         condition: service_completed_successfully
     environment:
       DB_URL: jdbc:postgresql://db:5433/${DB_NAME:-spring_blog}?currentSchema=public&sslmode=disable
-      DB_USERNAME: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_APP_USER}
+      DB_PASSWORD: ${DB_APP_PASSWORD}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
@@ -63,7 +65,7 @@ services:
     environment:
       APP_ENV: production
       DOCS_ENABLED: false
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@db:5433/${DB_NAME:-spring_blog}
+      DATABASE_URL: postgresql+asyncpg://${DB_APP_USER}:${DB_APP_PASSWORD}@db:5433/${DB_NAME:-spring_blog}
       DB_ECHO: "false"
       LOG_LEVEL: INFO
       JWT_SECRET: ${JWT_SECRET}

@@ -142,6 +142,8 @@ CREATE TABLE public.site_config (
     CONSTRAINT site_config_pkey PRIMARY KEY (id)
 );
 
+INSERT INTO public.site_config (background_url) VALUES (NULL);
+
 CREATE INDEX idx_article_category_list_sort
     ON public.article (
         category_id,

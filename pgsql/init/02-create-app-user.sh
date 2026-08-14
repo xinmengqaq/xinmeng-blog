@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# ponytail: single line so the script survives Windows CRLF line endings (heredoc/if/pipefail all break on \r)
+: "${DB_APP_USER:?DB_APP_USER unset}" && : "${DB_APP_PASSWORD:?DB_APP_PASSWORD unset}" && echo "CREATE USER \"${DB_APP_USER//\"/\"\"}\" WITH PASSWORD '${DB_APP_PASSWORD//\'/\'\'}'; GRANT CONNECT ON DATABASE \"${POSTGRES_DB}\" TO \"${DB_APP_USER//\"/\"\"}\"; GRANT USAGE ON SCHEMA public TO \"${DB_APP_USER//\"/\"\"}\"; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO \"${DB_APP_USER//\"/\"\"}\"; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO \"${DB_APP_USER//\"/\"\"}\";" | psql --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" --set ON_ERROR_STOP=1 # done
