@@ -1,8 +1,8 @@
 # 薪梦集
 
-薪梦集是一套前后端分离的个人博客系统，包含公开阅读站点、内容管理后台、独立图片服务和 PostgreSQL 关系型数据库。
+薪梦集是一套前后端分离的个人博客系统，包含公开阅读站点、内容管理后台、普通用户账号、图片与音乐文件服务和 PostgreSQL 关系型数据库。
 
-项目最初由 React 和 Spring Boot 组成，后来加入 FastAPI，单独承载更适合 Python 的能力。它目前负责图片处理与文件存储，后续会在这套服务上继续接入 AI、向量检索和其他 Python 生态能力，Spring Boot 仍负责博客的核心业务。
+项目由 React、Spring Boot 和 FastAPI 组成：Spring Boot 负责博客核心业务、管理员和普通用户账号，FastAPI 负责图片、文件和音乐资源。
 
 ## 预览
 
@@ -15,6 +15,9 @@
 - 首页文章展示
 - 文章列表、关键词搜索、分类和标签筛选
 - 文章详情、目录导航、阅读设置和点赞
+- 音乐列表、音乐播放和首页音乐控制
+- 普通用户注册、登录、找回密码和账号恢复
+- 普通用户资料、邮箱、密码和头像管理
 - 站点背景与页面动效
 
 ### 管理后台
@@ -24,6 +27,8 @@
 - 文章新建、编辑、删除和批量删除
 - 文章发布状态、置顶和推荐管理
 - 分类与标签管理
+- 音乐上传、编辑、停用和删除
+- 普通用户查询、状态管理和账号操作
 - 站点背景管理
 
 ### 图片服务
@@ -32,6 +37,7 @@
 - 文章封面上传与删除
 - 正文图片上传与引用检查
 - 站点背景上传与删除
+- 音乐文件上传、访问与删除
 - 图片格式、大小和真实内容校验
 
 ## 技术栈
@@ -106,7 +112,7 @@ location ^~ /api/ {
 
 Spring Boot 与 FastAPI 使用同一个 PostgreSQL 数据库和同一份 JWT 密钥。
 
-PostgreSQL 保存管理员、文章、分类、标签、站点配置和文件地址等业务数据。图片文件保存在 FastAPI 管理的文件目录中，数据库只记录访问地址。
+PostgreSQL 保存管理员、普通用户、文章、分类、标签、点赞、音乐、站点配置和文件地址等业务数据。图片、音乐等文件保存在 FastAPI 管理的文件目录中，数据库只记录访问地址。
 
 ## 环境要求
 
@@ -187,6 +193,15 @@ npm run dev
 
 ### 首次部署
 
+首次部署有两种方式：方式一克隆项目源码后由 Docker 构建，方式二只下载公开部署文件并直接拉取 Docker Hub 镜像。两种方式使用同一套 PostgreSQL、Flyway 和数据库初始化规则。
+
+#### 方式一：克隆项目部署
+
+```powershell
+git clone https://github.com/xinmengqaq/xinmeng-blog.git
+cd xinmeng-blog
+```
+
 #### 1. 准备环境变量
 
 参考根目录 `.env.example` 准备 `.env`，开源版设置：
@@ -222,7 +237,33 @@ Docker 会自动构建项目镜像、启动数据库，再由官方 Flyway 镜�
 
 开源部署还会在同一个 PostgreSQL 容器中创建 `springboot_vue_test` 测试库。业务库和测试库互相独立，不会增加第二个数据库容器。
 
-#### 3. 登录后台
+#### 方式二：直接拉取公开镜像
+
+这种方式不会下载三个后端和前端项目源，只下载 Docker Compose 部署文件、环境变量示例和数据库迁移文件：
+
+```powershell
+New-Item -ItemType Directory -Force xinmeng-blog-deploy | Out-Null
+Set-Location xinmeng-blog-deploy
+
+$base = "https://raw.githubusercontent.com/xinmengqaq/xinmeng-blog/main"
+Invoke-WebRequest "$base/docker-compose.opensource.yml" -OutFile docker-compose.yml
+Invoke-WebRequest "$base/.env.example" -OutFile .env.example
+New-Item -ItemType Directory -Force pgsql/init, pgsql/migrations | Out-Null
+Invoke-WebRequest "$base/pgsql/init/01-create-test-database.sh" -OutFile pgsql/init/01-create-test-database.sh
+Invoke-WebRequest "$base/pgsql/migrations/V1__current_schema_baseline.sql" -OutFile pgsql/migrations/V1__current_schema_baseline.sql
+Copy-Item .env.example .env
+```
+
+编辑 `.env` 后，直接拉取并启动公开镜像：
+
+```powershell
+docker compose --env-file .env pull
+docker compose --env-file .env up -d --wait
+```
+
+公开镜像标签为：`xinmengqwq/xinmeng-blog:springboot`、`xinmengqwq/xinmeng-blog:fastapi`、`xinmengqwq/xinmeng-blog:web`。公开部署使用通用 HTTP 配置，不包含个人域名和证书；需要 HTTPS 时，应在外部反向代理中配置自己的域名和证书。
+
+#### 登录后台
 
 部署完成后访问：
 

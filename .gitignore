@@ -8,6 +8,7 @@
 !/.gitignore
 !/README.md
 !/docker-compose.yml
+!/docker-compose.opensource.yml
 !/springboot/
 !/blog-web/
 !/blog-fastapi/
