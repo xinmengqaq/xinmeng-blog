@@ -21,8 +21,16 @@ export type ParsedArticleContent = {
   headingIds: Map<object, string>
 }
 
-const textOf = (node: ArticleContentNode): string =>
-  node.value ?? node.alt ?? node.children?.map(textOf).join('') ?? ''
+const textOf = (node: ArticleContentNode): string => {
+  if (node.type === 'html') {
+    const document = new DOMParser().parseFromString(
+      node.value ?? '',
+      'text/html',
+    )
+    return document.body.textContent ?? ''
+  }
+  return node.value ?? node.alt ?? node.children?.map(textOf).join('') ?? ''
+}
 
 const slug = (text: string) =>
   text

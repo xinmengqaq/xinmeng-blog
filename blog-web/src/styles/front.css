@@ -1001,7 +1001,7 @@
 }
 .detail-layout {
   display: grid;
-  grid-template-columns: minmax(0, 720px) minmax(260px, 280px);
+  grid-template-columns: minmax(0, 800px) minmax(260px, 280px);
   justify-content: center;
   gap: 64px;
   margin-top: 45px;

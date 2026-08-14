@@ -70,4 +70,15 @@ const value = 1
       align: 'center',
     })
   })
+
+  it('带百分比宽度的 HTML 图片应解析并限制在安全范围内', () => {
+    // Given 编辑器输出了居中且宽度为 75% 的图片
+    const [image] = parseMarkdownToBlocks(
+      '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面" style="width:75%"></p>',
+    )
+
+    // When Markdown 被解析回图片块
+    // Then 对齐和百分比宽度都应保留
+    expect(image).toMatchObject({ type: 'image', align: 'center', width: 75 })
+  })
 })

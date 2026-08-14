@@ -61,6 +61,8 @@ export const createDefaultTableBlock = (): TableBlock => ({
   ),
 })
 
+export const DEFAULT_IMAGE_WIDTH = 100
+
 export const ensureNonEmptyDocument = (blocks: EditorBlock[]) =>
   blocks.length > 0 ? blocks : [createParagraphBlock()]
 

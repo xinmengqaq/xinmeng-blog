@@ -51,6 +51,15 @@ const renderSafeHtmlBlock = (html: string, key: string) => {
   const clean = sanitizeAuthorHtml(html)
   if (!clean) return null
   const document = new DOMParser().parseFromString(clean, 'text/html')
+  if (document.body.querySelector('img')) {
+    return (
+      <div
+        className="reading-image"
+        dangerouslySetInnerHTML={{ __html: clean }}
+        key={key}
+      />
+    )
+  }
   if (!document.body.querySelector('table')) return null
   return (
     <div

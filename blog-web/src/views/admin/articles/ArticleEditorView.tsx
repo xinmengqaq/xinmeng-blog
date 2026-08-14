@@ -31,6 +31,14 @@ import {
   type ArticleFormErrors,
   validateArticleForm,
 } from './articleEditorForm'
+import {
+  ARTICLE_EDITOR_DRAFT_INTERVAL_MS,
+  getArticleEditorDraftKey,
+  readArticleEditorDraft,
+  removeArticleEditorDraft,
+  saveArticleEditorDraft,
+  type ArticleEditorDraft,
+} from './articleEditorDraft'
 import { useArticleImageDrafts } from './hooks/useArticleImageDrafts'
 import { useArticleImageSave } from './hooks/useArticleImageSave'
 import './articlePages.css'
@@ -48,6 +56,9 @@ const saveStateLabels: Record<ArticleSaveState, string> = {
   saved: '保存状态：已保存',
   failed: '保存状态：保存失败',
 }
+
+const shouldPersistDraft = (saveState: ArticleSaveState) =>
+  saveState === 'dirty' || saveState === 'failed' || saveState === 'saving'
 
 export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
   const navigate = useNavigate()
@@ -69,12 +80,31 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [leaveOpen, setLeaveOpen] = useState(false)
+  const [localDraft, setLocalDraft] = useState<ArticleEditorDraft | null>(null)
+  const [draftReady, setDraftReady] = useState(mode === 'create')
   const [taxonomyAvailable, setTaxonomyAvailable] = useState(true)
   const hydratedArticleId = useRef<number | null>(null)
   const initialContentRef = useRef('')
   const allowNavigationRef = useRef(false)
+  const checkedDraftKeyRef = useRef<string | null>(null)
+  const formRef = useRef(form)
+  const saveStateRef = useRef(saveState)
+  const articleIdRef = useRef(articleId)
+  const draftReadyRef = useRef(draftReady)
+  const localDraftRef = useRef(localDraft)
   const imageDrafts = useArticleImageDrafts()
   const imageSave = useArticleImageSave()
+
+  formRef.current = form
+  saveStateRef.current = saveState
+  articleIdRef.current = articleId
+  draftReadyRef.current = draftReady
+  localDraftRef.current = localDraft
+
+  const setTrackedSaveState = useCallback((next: ArticleSaveState) => {
+    saveStateRef.current = next
+    setSaveState(next)
+  }, [])
 
   const hasUnsavedChanges =
     saveState === 'dirty' ||
@@ -95,6 +125,9 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
     useCallback(
       (event) => {
         if (!hasUnsavedChanges) return
+        if (shouldPersistDraft(saveStateRef.current)) {
+          saveArticleEditorDraft(articleIdRef.current, formRef.current)
+        }
         event.preventDefault()
         event.returnValue = ''
       },
@@ -117,20 +150,58 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
     }
     hydratedArticleId.current = article.id
     initialContentRef.current = article.content ?? ''
-    setForm(toArticleForm(article))
+    const nextForm = toArticleForm(article)
+    formRef.current = nextForm
+    setForm(nextForm)
     setErrors({})
-    setSaveState('clean')
-  }, [articleQuery.data, mode])
+    setTrackedSaveState('clean')
+  }, [articleQuery.data, mode, setTrackedSaveState])
+
+  const draftKey = getArticleEditorDraftKey(articleId)
+
+  useEffect(() => {
+    if (invalidArticleId || (mode === 'edit' && !articleQuery.data)) return
+    if (checkedDraftKeyRef.current === draftKey) return
+    checkedDraftKeyRef.current = draftKey
+    setLocalDraft(readArticleEditorDraft(articleId))
+    setDraftReady(true)
+  }, [articleId, articleQuery.data, draftKey, invalidArticleId, mode])
+
+  useEffect(() => {
+    if (!draftReady || localDraft) return
+    const timer = window.setInterval(() => {
+      if (!shouldPersistDraft(saveStateRef.current)) return
+      saveArticleEditorDraft(articleIdRef.current, formRef.current)
+    }, ARTICLE_EDITOR_DRAFT_INTERVAL_MS)
+    return () => window.clearInterval(timer)
+  }, [draftReady, localDraft])
+
+  useEffect(
+    () => () => {
+      if (
+        draftReadyRef.current &&
+        localDraftRef.current === null &&
+        shouldPersistDraft(saveStateRef.current)
+      ) {
+        saveArticleEditorDraft(articleIdRef.current, formRef.current)
+      }
+    },
+    [],
+  )
 
   const updateField = <Key extends keyof ArticleForm>(
     key: Key,
     value: ArticleForm[Key],
   ) => {
-    setForm((current) => ({ ...current, [key]: value }))
+    setForm((current) => {
+      const nextForm = { ...current, [key]: value }
+      formRef.current = nextForm
+      return nextForm
+    })
     setErrors((current) => ({ ...current, [key]: undefined }))
     setRequestError(null)
     setSaveNotice(null)
-    setSaveState('dirty')
+    setTrackedSaveState('dirty')
   }
 
   const saveArticle = async () => {
@@ -138,7 +209,7 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
     const nextErrors = validateArticleForm(form)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
-      setSaveState('dirty')
+      setTrackedSaveState('dirty')
       return
     }
     if (!taxonomyAvailable) {
@@ -148,7 +219,7 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
     const payload = toArticleSaveParams(form)
     setRequestError(null)
     setSaveNotice(null)
-    setSaveState('saving')
+    setTrackedSaveState('saving')
     try {
       const result = await imageSave.save({
         articleId,
@@ -163,18 +234,21 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
       if (result.retainedInUseUrls.length > 0) {
         setSaveNotice('图片已从当前文章移除，但仍被其他文章使用')
       }
-      setSaveState('saved')
+      removeArticleEditorDraft(articleId)
+      setTrackedSaveState('saved')
       if (mode === 'create') {
         allowNavigationRef.current = true
         navigate(`/admin/articles/${result.articleId}/edit`, { replace: true })
       } else {
-        setForm(toArticleForm(result.article ?? {}, result.payload))
+        const nextForm = toArticleForm(result.article ?? {}, result.payload)
+        formRef.current = nextForm
+        setForm(nextForm)
       }
     } catch (error) {
       setRequestError(
         error instanceof Error ? error.message : toApiError(error).message,
       )
-      setSaveState('failed')
+      setTrackedSaveState('failed')
     }
   }
 
@@ -184,11 +258,37 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
     try {
       await deleteMutation.mutateAsync(articleId)
       setDeleteOpen(false)
+      removeArticleEditorDraft(articleId)
+      setTrackedSaveState('clean')
       allowNavigationRef.current = true
       navigate('/admin/articles', { replace: true })
     } catch (error) {
       setRequestError(toApiError(error).message)
     }
+  }
+
+  const restoreLocalDraft = () => {
+    if (!localDraft) return
+    const nextForm = {
+      ...localDraft.form,
+      tagIds: [...localDraft.form.tagIds],
+    }
+    formRef.current = nextForm
+    setForm(nextForm)
+    setErrors({})
+    setRequestError(null)
+    setSaveNotice(
+      localDraft.omittedLocalImages
+        ? '本地草稿未包含未上传图片，请重新选择图片'
+        : null,
+    )
+    setTrackedSaveState('dirty')
+    setLocalDraft(null)
+  }
+
+  const discardLocalDraft = () => {
+    removeArticleEditorDraft(articleId)
+    setLocalDraft(null)
   }
 
   if (invalidArticleId) {
@@ -307,9 +407,21 @@ export const ArticleEditorView = ({ mode }: ArticleEditorViewProps) => {
         }}
         onConfirm={() => {
           imageDrafts.discardAll()
+          removeArticleEditorDraft(articleId)
+          setTrackedSaveState('clean')
           setLeaveOpen(false)
           if (blocker.state === 'blocked') blocker.proceed()
         }}
+      />
+
+      <ConfirmDialog
+        cancelText="丢弃草稿"
+        confirmText="恢复草稿"
+        description={`发现本地编辑草稿。恢复后会覆盖当前表单。${localDraft?.omittedLocalImages ? '未上传图片不会恢复，请重新选择图片。' : ''}`}
+        open={localDraft !== null}
+        title="恢复本地草稿"
+        onCancel={discardLocalDraft}
+        onConfirm={restoreLocalDraft}
       />
     </section>
   )

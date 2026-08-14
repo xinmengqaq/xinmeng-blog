@@ -139,11 +139,14 @@ const serializeBlock = (block: EditorBlock) => {
     case 'code':
       return `\`\`\`${block.language ?? ''}\n${block.code}\n\`\`\``
     case 'image':
-      if (block.align === 'left') return `![${block.alt ?? ''}](${block.url})`
+      if (block.align === 'left' && (block.width ?? 100) === 100) {
+        return `![${block.alt ?? ''}](${block.url})`
+      }
       return serializeAlignedImageHtml({
         url: block.url,
         alt: block.alt ?? '',
         align: block.align,
+        width: block.width ?? 100,
       })
     case 'table':
       return isSimpleTable(block)

@@ -1311,6 +1311,31 @@ describe('BlockMarkdownEditor', () => {
     )
   })
 
+  it('图片工具应支持百分比宽度并保存设置', () => {
+    // Given 管理员选中一张正文图片
+    const onChange = vi.fn()
+    render(
+      <BlockMarkdownEditor
+        value="![封面](https://example.com/a.png)"
+        onChange={onChange}
+      />,
+    )
+    fireEvent.click(screen.getByRole('img', { name: '封面' }))
+
+    // When 将图片大小调整为 75%
+    fireEvent.change(screen.getByRole('combobox', { name: '图片大小' }), {
+      target: { value: '75' },
+    })
+
+    // Then 预览宽度和保存内容都应同步更新
+    expect(screen.getByRole('img', { name: '封面' })).toHaveStyle({
+      width: '75%',
+    })
+    expect(onChange).toHaveBeenLastCalledWith(
+      '<p style="text-align:left"><img src="https://example.com/a.png" alt="封面" style="width:75%"></p>',
+    )
+  })
+
   it('顶部上传图片应插入最近聚焦块之后', () => {
     // Given 管理员把光标放在正文中间的内容块
     // When 上传按钮夺取焦点后选择并确认一张正文图片

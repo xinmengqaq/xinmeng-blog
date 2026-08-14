@@ -193,6 +193,7 @@ const nodeToBlocks = (node: MarkdownNode): EditorBlock[] => {
             url: node.children[0].url ?? '',
             alt: node.children[0].alt ?? '',
             align: 'left',
+            width: 100,
           },
         ]
       }

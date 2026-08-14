@@ -12,6 +12,7 @@ export type AlignedImageHtml = {
   url: string
   alt: string
   align: TextAlign
+  width: number
 }
 
 export const parseAlignedImageHtml = (
@@ -34,10 +35,15 @@ export const parseAlignedImageHtml = (
     ?.match(/(?:^|;)\s*text-align\s*:\s*(left|center|right)\s*(?:;|$)/i)?.[1]
   const align = alignment?.toLowerCase() as TextAlign | undefined
   if (!align || !alignments.has(align)) return null
+  const widthValue = image
+    .getAttribute('style')
+    ?.match(/(?:^|;)\s*width\s*:\s*(100|[1-9]?\d)%\s*(?:;|$)/i)?.[1]
+  const width = Number(widthValue)
   return {
     url: image.getAttribute('src') ?? '',
     alt: image.getAttribute('alt') ?? '',
     align,
+    width: Number.isInteger(width) && width >= 1 && width <= 100 ? width : 100,
   }
 }
 
@@ -52,8 +58,9 @@ export const serializeAlignedImageHtml = ({
   url,
   alt,
   align,
+  width = 100,
 }: AlignedImageHtml) =>
   DOMPurify.sanitize(
-    `<p style="text-align:${align}"><img src="${escapeAttribute(url)}" alt="${escapeAttribute(alt)}"></p>`,
+    `<p style="text-align:${align}"><img src="${escapeAttribute(url)}" alt="${escapeAttribute(alt)}"${width !== 100 ? ` style="width:${width}%"` : ''}></p>`,
     imageHtmlConfig,
   )

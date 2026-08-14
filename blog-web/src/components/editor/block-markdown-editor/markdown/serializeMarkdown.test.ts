@@ -98,4 +98,24 @@ const value = 1
       '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面"></p>',
     )
   })
+
+  it('图片宽度比例应写入受限 HTML 并可再次解析', () => {
+    // Given 图片块设置为右对齐和 75% 宽度
+    const block = {
+      id: 'image',
+      type: 'image' as const,
+      url: 'https://example.com/a.png',
+      alt: '封面',
+      align: 'right' as const,
+      width: 75,
+    }
+
+    // When 序列化并重新解析
+    const serialized = serializeBlocksToMarkdown([block])
+
+    // Then 宽度比例和对齐设置都应保留
+    expect(serialized).toBe(
+      '<p style="text-align:right"><img src="https://example.com/a.png" alt="封面" style="width:75%"></p>',
+    )
+  })
 })

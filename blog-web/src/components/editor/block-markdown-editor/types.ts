@@ -51,6 +51,7 @@ export type ImageBlock = EditorBlockBase & {
   url: string
   alt?: string
   align: TextAlign
+  width?: number
 }
 
 export type TableCell = {

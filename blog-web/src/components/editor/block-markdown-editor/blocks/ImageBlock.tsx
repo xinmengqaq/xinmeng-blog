@@ -44,6 +44,7 @@ export const ImageBlock = ({
         <img
           src={block.url}
           alt={block.alt ?? ''}
+          style={{ width: `${block.width ?? 100}%` }}
           onError={() => setFailed(true)}
         />
       )}

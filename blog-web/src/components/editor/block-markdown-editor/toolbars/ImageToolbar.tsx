@@ -28,6 +28,7 @@ type ImageToolbarProps = {
   preparingCrop: boolean
   onAltChange: (alt: string) => void
   onAlignChange: (align: TextAlign) => void
+  onWidthChange: (width: number) => void
   onClose: () => void
   onRecrop: () => void
   onRemove: () => void
@@ -42,6 +43,7 @@ export const ImageToolbar = ({
   preparingCrop,
   onAltChange,
   onAlignChange,
+  onWidthChange,
   onClose,
   onRecrop,
   onRemove,
@@ -122,6 +124,21 @@ export const ImageToolbar = ({
             <Icon aria-hidden="true" />
           </button>
         ))}
+        <label className="block-editor__image-width">
+          <span>图片大小</span>
+          <select
+            aria-label="图片大小"
+            disabled={disabled}
+            value={block.width ?? 100}
+            onChange={(event) => onWidthChange(Number(event.target.value))}
+          >
+            {[50, 75, 100].map((width) => (
+              <option key={width} value={width}>
+                {width}%
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           aria-label="更换图片"
           disabled={disabled}

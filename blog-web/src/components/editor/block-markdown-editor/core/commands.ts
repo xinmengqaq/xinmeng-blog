@@ -120,6 +120,7 @@ export const createBlockByType = (type: BlockType): EditorBlock => {
         url: '',
         alt: '',
         align: 'left',
+        width: 100,
       }
     case 'table':
       return createDefaultTableBlock()

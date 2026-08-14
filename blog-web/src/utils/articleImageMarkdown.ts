@@ -42,6 +42,26 @@ export function replaceImageUrlsInContent(
   return changed ? markdownProcessor.stringify(root) : content
 }
 
+export function removeBlobImageUrlsFromContent(content: string): string {
+  const root = parseMarkdown(content)
+  let changed = false
+
+  const removeBlobImages = (node: MarkdownNode) => {
+    if (!node.children) return
+    node.children = node.children.filter((child) => {
+      if (child.type === 'image' && child.url?.startsWith('blob:')) {
+        changed = true
+        return false
+      }
+      removeBlobImages(child)
+      return true
+    })
+  }
+
+  removeBlobImages(root)
+  return changed ? markdownProcessor.stringify(root) : content
+}
+
 export function getRemovedImageUrls(
   initialContent: string,
   currentContent: string,

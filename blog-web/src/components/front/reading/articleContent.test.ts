@@ -32,6 +32,39 @@ describe('公开文章正文处理', () => {
     ])
   })
 
+  it('目录标题只显示可见文字，不泄漏安全行内 HTML 标签源码', () => {
+    // Given 标题使用编辑器允许的 span 格式
+    const parsed = parseArticleContent(
+      '## 关于博客<span style="color:#dc2626">与阅读</span>',
+    )
+
+    // When 前台生成目录
+    // Then 目录文字应去掉标签源码但保留可见标题
+    expect(parsed.headings).toEqual([
+      { id: '关于博客与阅读', level: 2, text: '关于博客与阅读' },
+    ])
+  })
+
+  it('居中或右对齐的正文图片应继续显示并保留安全宽度', () => {
+    // Given 编辑器输出的受限图片 HTML
+    const parsed = parseArticleContent(
+      '<p style="text-align:center"><img src="https://example.com/a.png" alt="封面" style="width:75%"></p>',
+    )
+
+    // When 前台渲染正文
+    const { container } = render(ArticleContent({ parsed }))
+
+    // Then 图片仍存在，位置和百分比宽度都保留
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.com/a.png',
+    )
+    expect(container.querySelector('img')).toHaveStyle({ width: '75%' })
+    expect(container.querySelector('.reading-image p')).toHaveStyle({
+      textAlign: 'center',
+    })
+  })
+
   it('正文首个一级标题与文章标题相同时只保留页面头部标题', () => {
     // Given 页面已经单独展示文章标题，Markdown 正文首项又是同名一级标题
     // When 前台解析正文

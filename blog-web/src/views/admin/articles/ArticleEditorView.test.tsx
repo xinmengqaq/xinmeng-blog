@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
   createMemoryRouter,
   RouterProvider,
@@ -18,6 +18,11 @@ import { getCategories, getTags } from '@/api/taxonomy'
 import type { ArticleVO } from '@/types/article'
 
 import { ArticleEditorView } from './ArticleEditorView'
+import { emptyArticleForm } from './articleEditorForm'
+import {
+  readArticleEditorDraft,
+  saveArticleEditorDraft,
+} from './articleEditorDraft'
 
 vi.mock('@/api/article', () => ({
   createArticle: vi.fn(),
@@ -140,11 +145,16 @@ const fillValidForm = () => {
 
 describe('后台文章编辑页', () => {
   beforeEach(() => {
+    localStorage.clear()
     vi.mocked(getCategories).mockResolvedValue([])
     vi.mocked(getTags).mockResolvedValue([])
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    localStorage.clear()
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
 
   it('新建页默认字段为空且状态为草稿', () => {
     renderEditor('create')
@@ -324,6 +334,84 @@ describe('后台文章编辑页', () => {
 
     expect(await screen.findByText('后端保存失败')).toBeInTheDocument()
     expect(screen.getByText('保存状态：保存失败')).toBeInTheDocument()
+  })
+
+  it('每五分钟将未保存的新建文章写入本地草稿', () => {
+    vi.useFakeTimers()
+    renderEditor('create')
+    fillValidForm()
+
+    act(() => vi.advanceTimersByTime(5 * 60 * 1000 - 1))
+    expect(readArticleEditorDraft(null)).toBeNull()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(readArticleEditorDraft(null)).toMatchObject({
+      form: { title: '新文章', content: '正文内容' },
+    })
+  })
+
+  it('检测到编辑页本地草稿时，经确认恢复并标记为未保存', async () => {
+    saveArticleEditorDraft(7, {
+      ...emptyArticleForm,
+      title: '本地恢复标题',
+      content: '本地恢复正文',
+    })
+    vi.mocked(getArticleDetail).mockResolvedValue(article)
+    renderEditor('edit')
+
+    await screen.findByDisplayValue('已有文章')
+    expect(await screen.findByText('恢复本地草稿')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '恢复草稿' }))
+
+    expect(screen.getByLabelText('标题')).toHaveValue('本地恢复标题')
+    expect(screen.getByLabelText('文章正文')).toHaveValue('本地恢复正文')
+    expect(screen.getByText('保存状态：有未保存修改')).toBeInTheDocument()
+  })
+
+  it('检测到本地草稿时选择丢弃会删除缓存并保留服务器内容', async () => {
+    saveArticleEditorDraft(7, {
+      ...emptyArticleForm,
+      title: '不应恢复的标题',
+      content: '不应恢复的正文',
+    })
+    vi.mocked(getArticleDetail).mockResolvedValue(article)
+    renderEditor('edit')
+
+    await screen.findByDisplayValue('已有文章')
+    await screen.findByText('恢复本地草稿')
+
+    fireEvent.click(screen.getByRole('button', { name: '丢弃草稿' }))
+
+    expect(readArticleEditorDraft(7)).toBeNull()
+    expect(screen.getByLabelText('标题')).toHaveValue('已有文章')
+    expect(screen.getByLabelText('文章正文')).toHaveValue('# 已有正文')
+  })
+
+  it('编辑页意外卸载时保留未保存字段供重新登录后恢复', () => {
+    const rendered = renderEditor('create')
+    fillValidForm()
+
+    rendered.unmount()
+
+    expect(readArticleEditorDraft(null)).toMatchObject({
+      form: { title: '新文章', content: '正文内容' },
+    })
+  })
+
+  it('手动保存成功后清除新建页本地草稿', async () => {
+    vi.mocked(createArticle).mockResolvedValue({ id: 23 })
+    vi.useFakeTimers()
+    renderEditor('create')
+    fillValidForm()
+    act(() => vi.advanceTimersByTime(5 * 60 * 1000))
+    expect(readArticleEditorDraft(null)).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '保存文章' }))
+
+    await act(async () => undefined)
+    expect(createArticle).toHaveBeenCalledOnce()
+    expect(readArticleEditorDraft(null)).toBeNull()
   })
 
   it('编辑页删除文章应确认并在成功后返回列表', async () => {

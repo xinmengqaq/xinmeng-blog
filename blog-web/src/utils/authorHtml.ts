@@ -29,6 +29,8 @@ export const allowedBackgroundColors = [
 export const allowedHtmlTags = [
   'span',
   'u',
+  'p',
+  'img',
   'table',
   'thead',
   'tbody',
@@ -67,7 +69,7 @@ const sanitizeStyle = (style: string) =>
 export const sanitizeAuthorHtml = (html: string) => {
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [...allowedHtmlTags],
-    ALLOWED_ATTR: ['style', 'rowspan', 'colspan'],
+    ALLOWED_ATTR: ['style', 'rowspan', 'colspan', 'src', 'alt'],
     FORBID_TAGS: [
       'script',
       'style',
